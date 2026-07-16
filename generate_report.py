@@ -72,6 +72,13 @@ kpis = f"""
   <div class="kpi base"><div class="n">{jun['orders']/1000:.1f}k</div><div class="l">Orders · MoM {pct(ord_mom, True)}</div></div>
   <div class="kpi"><div class="n">{jun['brands']}</div><div class="l">Partners · {len(DATA['cities'])} active cities</div></div>
 </div>
+<div class="grid kpis" style="margin-top:14px">
+  <div class="kpi"><div class="n">€{jun['ef_pou']:.2f}</div><div class="l">Eater fees / order</div></div>
+  <div class="kpi"><div class="n">{jun['ef_pct']:.1f}%</div><div class="l">Eater fees, % GMV</div></div>
+  <div class="kpi warn"><div class="n">€{jun['cpo']:.2f}</div><div class="l">CPO (courier cost / order)</div></div>
+  <div class="kpi"><div class="n">{jun['camp_bolt_pct']:.1f}%</div><div class="l">Campaign spend Bolt, % GMV</div></div>
+  <div class="kpi"><div class="n">{jun['camp_share']:.1f}%</div><div class="l">Campaign orders share</div></div>
+</div>
 """
 
 # ── Segment scorecard ───────────────────────────────────────────────────────────
@@ -82,13 +89,22 @@ for seg in SEGS:
     cp = seg_val(seg, "jun", "cp")
     orders = seg_val(seg, "jun", "orders")
     brands = seg_val(seg, "jun", "brands")
+    ef = seg_val(seg, "jun", "eater_fee")
+    cc = seg_val(seg, "jun", "courier_costs")
+    cb = seg_val(seg, "jun", "camp_bolt")
+    co = seg_val(seg, "jun", "camp_orders")
     share = g / jun["gmv"] * 100
     mom = (g / gm - 1) * 100 if gm else None
     margin = cp / g * 100 if g else 0
+    ef_pou = ef / orders if orders else 0
+    cpo = cc / orders if orders else 0
+    cb_pct = cb / g * 100 if g else 0
+    camp_ord = co / orders * 100 if orders else 0
     seg_rows += (
         f'<tr class="{row_cls(cp)}"><td class="axis">{seg}</td><td>{eur(g)}</td><td>{share:.0f}%</td>'
         f"<td>{delta_span(mom)}</td><td>{money_span(cp)}</td><td>{margin:.1f}%</td>"
-        f"<td>{orders:,}</td><td>{brands}</td></tr>"
+        f"<td>{orders:,}</td><td>€{ef_pou:.2f}</td><td>{ef/g*100 if g else 0:.1f}%</td>"
+        f"<td>€{cpo:.2f}</td><td>{cb_pct:.1f}%</td><td>{camp_ord:.0f}%</td><td>{brands}</td></tr>"
     )
 
 # ── City ranking (all active cities, sorted by GMV) ─────────────────────────────
@@ -108,6 +124,23 @@ for c in cities:
         f'<td>{rate(c["failed_rate"])}</td><td>{rate(c["late_rate"])}</td></tr>'
     )
 
+# ── City eater fees, CPO & campaigns ────────────────────────────────────────────
+def rate0(v):
+    return "–" if v is None else f"{v:.0f}%"
+
+
+city_econ_rows = ""
+for c in cities:
+    ef_pou_s = "–" if c["ef_pou"] is None else f"€{c['ef_pou']:.2f}"
+    cpo_s = "–" if c["cpo"] is None else f"€{c['cpo']:.2f}"
+    city_econ_rows += (
+        f'<tr><td class="axis">{c["city"]}</td><td>{c["orders"]:,}</td>'
+        f'<td>{eur(c["eater_fee"])}</td><td>{ef_pou_s}</td><td>{rate(c["ef_pct"])}</td>'
+        f'<td>{cpo_s}</td>'
+        f'<td>{eur(c["camp_bolt"])}</td><td>{eur(c["camp_prov"])}</td><td>{eur(c["camp_disc"])}</td>'
+        f'<td>{rate(c["camp_bolt_pct"])}</td><td>{rate0(c["camp_share"])}</td></tr>'
+    )
+
 # ── Per-city partner breakdown (top 6 cities) ───────────────────────────────────
 city_cards = ""
 for c in cities[:6]:
@@ -119,26 +152,33 @@ for c in cities[:6]:
             seg_bits.append(f'<span class="pill">{s}: {eur(sd["gmv"])} · CP {money_span(sd["cp"])} ({m:.0f}%)</span>')
     brows = ""
     for b in c["top_brands"]:
+        ef_s = "–" if b.get("ef_pou") is None else f"€{b['ef_pou']:.2f}"
+        cpo_s = "–" if b.get("cpo") is None else f"€{b['cpo']:.2f}"
+        camp_s = "–" if b.get("camp_share") is None else f"{b['camp_share']:.0f}%"
         brows += (
             f'<tr class="{row_cls(b["cp"])}"><td class="axis">{b["brand"]}</td><td>{b["seg"]}</td>'
             f'<td>{eur(b["gmv"])}</td><td>{b["orders"]:,}</td><td>{delta_span(b["pop"])}</td>'
-            f'<td>{money_span(b["cp"])}</td></tr>'
+            f'<td>{money_span(b["cp"])}</td><td>{ef_s}</td><td>{cpo_s}</td><td>{camp_s}</td></tr>'
         )
     cmargin_s = rate(c["cp_margin"])
     city_cards += f"""
     <div class="chartcard">
       <h3>{c['city']} — {eur(c['gmv'])} GMV · CP {money_span(c['cp'])} ({cmargin_s}) · MoM {delta_span(c['pop'])}</h3>
       <div class="meta" style="margin:6px 0 10px">{''.join(seg_bits)}</div>
-      <table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>GMV</th><th>Orders</th><th>MoM</th><th>CP</th></tr></thead><tbody>{brows}</tbody></table>
+      <table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>GMV</th><th>Orders</th><th>MoM</th><th>CP</th><th>Eater fee/ord</th><th>CPO</th><th>Camp ord%</th></tr></thead><tbody>{brows}</tbody></table>
     </div>"""
 
 # ── Partner leaderboard ─────────────────────────────────────────────────────────
 brand_rows = ""
 for b in DATA["brands"]:
+    ef_s = "–" if b.get("ef_pou") is None else f"€{b['ef_pou']:.2f}"
+    cpo_s = "–" if b.get("cpo") is None else f"€{b['cpo']:.2f}"
+    camp_s = "–" if b.get("camp_share") is None else f"{b['camp_share']:.0f}%"
     brand_rows += (
         f'<tr class="{row_cls(b["cp"])}"><td class="axis">{b["brand"]}</td><td>{b["seg"]}</td>'
         f'<td>{b["main_city"]}</td><td>{b["ncities"]}</td><td>{eur(b["gmv"])}</td>'
-        f'<td>{delta_span(b["pop"])}</td><td>{money_span(b["cp"])}</td><td>{b["cp_margin"]:.1f}%</td></tr>'
+        f'<td>{delta_span(b["pop"])}</td><td>{money_span(b["cp"])}</td><td>{b["cp_margin"]:.1f}%</td>'
+        f'<td>{ef_s}</td><td>{cpo_s}</td><td>{camp_s}</td></tr>'
     )
 
 # ── Movers ──────────────────────────────────────────────────────────────────────
@@ -230,6 +270,7 @@ HTML = f"""<!DOCTYPE html>
   <a href="#top">Overview</a>
   <a href="#segments">Segments</a>
   <a href="#cities">Cities</a>
+  <a href="#econ">Eater fees · CPO · Campaigns</a>
   <a href="#deepdive">City deep-dive</a>
   <a href="#partners">Partners</a>
   <a href="#movers">Movers</a>
@@ -261,12 +302,16 @@ HTML = f"""<!DOCTYPE html>
     <div class="chartcard"><h3>GMV by segment (€ / month)</h3><p class="cap">Source: dbx fact_provider_monthly</p><canvas id="gmvChart" height="200"></canvas></div>
     <div class="chartcard"><h3>Contribution Profit by segment (€ / month)</h3><p class="cap">Below zero = loss-making</p><canvas id="cpChart" height="200"></canvas></div>
   </div>
-  <table class="matrix"><thead><tr><th>Segment</th><th>GMV (Jun)</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>Partners</th></tr></thead><tbody>{seg_rows}</tbody></table>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Segment</th><th>GMV (Jun)</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>Eater fee/ord</th><th>EF %GMV</th><th>CPO</th><th>Camp Bolt %GMV</th><th>Camp ord%</th><th>Partners</th></tr></thead><tbody>{seg_rows}</tbody></table></div>
 
   <h2 class="section" id="cities"><span class="bar"></span>City ranking — фінанс &amp; опс</h2>
   <p class="section-desc">Топ-5 міст (Kyiv, Lviv, Dnipro, Kharkiv, Odesa) = ~77% GMV; Kyiv сам ~35%. Зелений рядок — CP margin ≥ 5%, червоний — збиткове місто.</p>
   <div class="chartcard"><h3>GMV &amp; Contribution Profit — top 12 cities (Jun 2026)</h3><p class="cap">Source: dbx fact_provider_monthly</p><canvas id="cityChart" height="140"></canvas></div>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>City</th><th>GMV</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>AOV</th><th>Failed</th><th>Late</th></tr></thead><tbody>{city_rows}</tbody></table></div>
+
+  <h2 class="section" id="econ"><span class="bar"></span>Eater fees, CPO &amp; campaigns — по містах</h2>
+  <p class="section-desc">Eater fees = виручка з комісій їдока (service + small-order + delivery fee). CPO = courier cost / order. Campaign spend Bolt/Provider — інвойсовані витрати на кампанії; Camp ord% — частка замовлень із кампанією. Червень 2026.</p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>City</th><th>Orders</th><th>Eater fees</th><th>EF / order</th><th>EF %GMV</th><th>CPO</th><th>Camp spend Bolt</th><th>Camp spend Prov.</th><th>Camp discount</th><th>Camp Bolt %GMV</th><th>Camp ord%</th></tr></thead><tbody>{city_econ_rows}</tbody></table></div>
 
   <h2 class="section" id="deepdive"><span class="bar"></span>City deep-dive — які партнери формують місто</h2>
   <p class="section-desc">Топ-6 міст: спліт по сегментах і топ-партнери з динамікою MoM та CP.</p>
@@ -274,7 +319,7 @@ HTML = f"""<!DOCTYPE html>
 
   <h2 class="section" id="partners"><span class="bar"></span>Partner leaderboard (top-{len(DATA['brands'])} by GMV)</h2>
   <p class="section-desc">VARUS — №1 за GMV (~€101k, +40% MoM), але й найбільший тягар по CP (−€8.4k).</p>
-  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Main city</th><th>Cities</th><th>GMV</th><th>MoM</th><th>CP</th><th>CP margin</th></tr></thead><tbody>{brand_rows}</tbody></table></div>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Main city</th><th>Cities</th><th>GMV</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Eater fee/ord</th><th>CPO</th><th>Camp ord%</th></tr></thead><tbody>{brand_rows}</tbody></table></div>
 
   <h2 class="section" id="movers"><span class="bar"></span>Movers — хто зростає, хто падає</h2>
   <p class="section-desc">Партнери з GMV &gt; €3k у травні, за динамікою MoM.</p>
