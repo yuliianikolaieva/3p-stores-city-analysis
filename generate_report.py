@@ -193,25 +193,30 @@ def mover_rows(arr):
         for b in arr
     )
 
-# ── Profitability diagnosis (June 2026, per-order P&L for 4 focus brands) ────────
+# ── Profitability diagnosis (June 2026, per-order P&L for 7 focus brands) ────────
 # Значення з dbx fact_provider_monthly (per delivered order, червень 2026).
 DIAG = [
-    {"brand": "VARUS", "seg": "Enterprise", "aov": 13.55, "own": 0, "comm_pct": 5.8, "comm": 0.79,
-     "ef": 1.70, "cpo": 2.03, "inc": 0.18 + 0.34, "refund": 0.71, "camp": 0.00, "camp_ord": 59,
-     "cpo_ord": -1.13, "margin": -8.3,
-     "why": "Bolt-доставка: CPO €2.03/зам. — найбільший драйвер. Eater fees €1.70 не покривають курʼєрку; комісія лише 5.8%; refunds €0.71/зам. — дуже високі."},
-    {"brand": "KOPIYKA", "seg": "Enterprise", "aov": 11.32, "own": 0, "comm_pct": 7.9, "comm": 0.89,
-     "ef": 1.49, "cpo": 1.79, "inc": 0.65 + 0.30, "refund": 0.60, "camp": 0.36, "camp_ord": 54,
-     "cpo_ord": -0.72, "margin": -6.4,
-     "why": "Низький AOV €11.3 + промо-навантаження (demand+campaign ≈ €1.0/зам., 54% замовлень з кампанією) + CPO €1.79 + refunds €0.60."},
-    {"brand": "SANTIM", "seg": "Enterprise", "aov": 16.24, "own": 1, "comm_pct": 7.7, "comm": 1.25,
-     "ef": 1.88, "cpo": 2.14, "inc": 1.37 + 0.26, "refund": 0.55, "camp": 0.82, "camp_ord": 67,
-     "cpo_ord": -0.60, "margin": -3.7,
-     "why": "GP додатній, але промо вбиває CP: demand incentives €1.37 + campaign €0.82/зам., 67% замовлень з кампанією. CPO €2.14."},
-    {"brand": "LOKO", "seg": "Enterprise", "aov": 15.00, "own": 100, "comm_pct": 3.2, "comm": 0.47,
-     "ef": 0.00, "cpo": 0.00, "inc": 0.47, "refund": 0.04, "camp": 0.41, "camp_ord": 5,
-     "cpo_ord": -0.48, "margin": -3.2,
-     "why": "Власна доставка (CPO=0), тож справа НЕ в курʼєрці. Комісія лише 3.2% (€0.47/зам.), а Bolt-фінансовані знижки (demand €0.47 + campaign €0.41 ≈ €0.88/зам.) з'їдають усю комісію."},
+    {"brand": "VARUS", "aov": 13.55, "own": 0, "comm_pct": 5.8, "comm": 0.79, "ef": 1.70, "cpo": 2.03,
+     "inc": 0.51, "refund": 0.71, "camp": 0.00, "camp_ord": 59, "cpo_ord": -1.13, "margin": -8.3,
+     "why": "Bolt-доставка: CPO €2.03/зам — найбільший драйвер. Eater fees €1.70 не покривають курʼєрку; комісія лише 5.8%; refunds €0.71/зам — дуже високі."},
+    {"brand": "LOKO", "aov": 15.00, "own": 100, "comm_pct": 3.2, "comm": 0.47, "ef": 0.00, "cpo": 0.00,
+     "inc": 0.47, "refund": 0.04, "camp": 0.41, "camp_ord": 5, "cpo_ord": -0.48, "margin": -3.2,
+     "why": "Власна доставка (CPO=0) — справа НЕ в курʼєрці. Комісія лише 3.2% (€0.47/зам), а Bolt-знижки (demand €0.47 + campaign €0.41 ≈ €0.88/зам) з'їдають усю комісію."},
+    {"brand": "KOPIYKA", "aov": 11.32, "own": 0, "comm_pct": 7.9, "comm": 0.89, "ef": 1.49, "cpo": 1.79,
+     "inc": 0.95, "refund": 0.60, "camp": 0.36, "camp_ord": 54, "cpo_ord": -0.72, "margin": -6.4,
+     "why": "Низький AOV €11.3 + промо (incentives+campaign ≈ €1.3/зам, 54% замовлень з кампанією) + CPO €1.79 + refunds €0.60."},
+    {"brand": "RUKAVYCHKA", "aov": 13.80, "own": 5, "comm_pct": 5.9, "comm": 0.82, "ef": 1.71, "cpo": 1.97,
+     "inc": 0.80, "refund": 0.25, "camp": 0.47, "camp_ord": 5, "cpo_ord": -0.57, "margin": -4.1,
+     "why": "CPO €1.97 + низька комісія 5.9%. Промо низьке (5% замовлень), refunds помірні — головне курʼєрка + комісія."},
+    {"brand": "KOPIYKA MINI", "aov": 11.43, "own": 5, "comm_pct": 7.3, "comm": 0.84, "ef": 1.48, "cpo": 1.98,
+     "inc": 1.02, "refund": 0.32, "camp": 0.36, "camp_ord": 63, "cpo_ord": -0.80, "margin": -7.0,
+     "why": "Як KOPIYKA, але гірше: низький AOV €11.4 + CPO €1.98 + важке промо (63% замовлень). У Миколаєві CPO €3.5, margin −10%."},
+    {"brand": "TAISTRA", "aov": 14.04, "own": 0, "comm_pct": 8.5, "comm": 1.19, "ef": 1.47, "cpo": 2.14,
+     "inc": 0.98, "refund": 0.08, "camp": 0.27, "camp_ord": 55, "cpo_ord": -0.39, "margin": -2.8,
+     "why": "Найближче до нуля. Комісія вже добра (8.5%), refunds мінімальні. Проблема — CPO €2.14 + промо (55%). У Тернополі вже +1.6%."},
+    {"brand": "SANTIM", "aov": 16.24, "own": 1, "comm_pct": 7.7, "comm": 1.25, "ef": 1.88, "cpo": 2.14,
+     "inc": 1.63, "refund": 0.55, "camp": 0.82, "camp_ord": 67, "cpo_ord": -0.60, "margin": -3.7,
+     "why": "GP додатній, але промо вбиває CP: incentives €1.63 + campaign €0.82/зам, 67% замовлень з кампанією. CPO €2.14."},
 ]
 diag_rows = ""
 for d in DIAG:
@@ -223,32 +228,60 @@ for d in DIAG:
         f'<td><span class="down">€{d["cpo_ord"]:.2f}</span></td><td><span class="down">{d["margin"]:.1f}%</span></td></tr>'
     )
 
+# Де найбільший мінус CP (місто з найбільшим тягарем CP у червні)
+CITYWORST = [
+    ("VARUS", "Dnipro", 2746, -3179, -8.5, 1.7, 48, 0.7, "Другий за втратами — Kyiv (−€2.4k). Найгірша маржа: Kryvyi Rih −14.8%, Zaporizhia −14.4%."),
+    ("LOKO", "Kyiv", 1759, -958, -3.4, 0.0, 2, 0.1, "Збиток рівномірний (−3% скрізь) — це системна проблема комісії 3.2%, не локальна."),
+    ("KOPIYKA", "Odesa", 1327, -936, -6.2, 1.8, 54, 0.6, "Присутня майже лише в Одесі — весь мінус тут."),
+    ("RUKAVYCHKA", "Lviv", 805, -453, -4.1, 1.9, 6, 0.2, "Практично лише Львів. Ivano-Frankivsk — CPO €3.3, деприоритезувати."),
+    ("KOPIYKA MINI", "Odesa", 417, -302, -6.6, 1.8, 61, 0.3, "Mykolaiv: −9.9% margin, CPO €3.5 — розглянути паузу/own-delivery."),
+    ("TAISTRA", "Chernivtsi", 551, -306, -4.0, 2.2, 47, 0.1, "Ternopil уже +1.6% — модель робоча при нижчому промо."),
+    ("SANTIM", "Odesa", 390, -235, -3.7, 2.1, 67, 0.6, "Єдине місто присутності."),
+]
+cityworst_rows = "".join(
+    f'<tr class="neg"><td class="axis">{b}</td><td>{c}</td><td>{o:,}</td>'
+    f'<td><span class="down">{eur(cp)}</span></td><td><span class="down">{m:.1f}%</span></td>'
+    f'<td>€{cpo:.2f}</td><td>{cs}%</td><td>€{rf:.2f}</td><td style="text-align:left;font-size:12px">{note}</td></tr>'
+    for (b, c, o, cp, m, cpo, cs, rf, note) in CITYWORST
+)
+
 RECO = {
-    "VARUS": ["Комісія: перегляд ставки 5.8% → 8–10% (найбільший, стабільний партнер, +40% MoM — є переговорна сила).",
-              "CPO: підняти MOV / small-order fee, батчинг у Києві та Дніпрі (batched ~0% зараз), звузити зони доставки; частину замовлень — на own-delivery у щільних локаціях.",
-              "Refunds €0.71/зам. — операційний фікс: наявність SKU, якість збірки/заміни, dispute-менеджмент. Ціль −30%.",
-              "Eater fees: підняти delivery/service fee там, де курʼєрка > fees (майже всюди)."],
-    "KOPIYKA": ["AOV €11.3 — найнижчий: підняти MOV, бандли/кошики, щоб розмити фіксовану курʼєрку на замовлення.",
-                "Промо: 54% замовлень з кампанією — зрізати неефективні, cost-share на партнера, таргет на ELC/churn замість бланкетних знижок.",
-                "Refunds €0.60 — availability & picking quality.",
-                "Комісія 7.9% — ок, головний важіль тут промо + AOV + CPO."],
-    "SANTIM": ["Промо — головний важіль: demand €1.37 + campaign €0.82/зам. при 67% замовлень з кампанією. Скоротити глибину/охоплення, перейти на partner cost-share.",
-               "GP вже +0.5% — прибрати надлишкове Bolt-фінансування → CP швидко в плюс.",
-               "CPO €2.14 при AOV €16.2 — прийнятно; фокус саме на incentives, не на курʼєрці."],
-    "LOKO": ["Комісія 3.2% — критично низька для own-delivery: ререгоціація до 6–8% (Bolt не несе курʼєрки, тож це чистий важіль).",
-             "Знижки: demand €0.47 + campaign €0.41/зам. перевищують усю комісію. Зменшити Bolt-частку cost-share, таргетувати промо, а не давати всім.",
-             "Own-delivery → eater fees = 0: розглянути service fee на платформі, щоб зʼявився додатковий стрім доходу.",
-             "33 міста присутності — сфокусувати промо-бюджет на топ-містах з позитивним трендом, зрізати в хвості."],
+    "VARUS": ["Комісія 5.8% → 8–10% (партнер №1, +40% MoM — є переговорна сила).",
+              "CPO: MOV↑ / small-order fee, батчинг у Києві та Дніпрі (batched ~0%), звузити зони; own-delivery у щільних локаціях.",
+              "Refunds €0.71/зам — операційний фікс (наявність SKU, збірка, заміни, disputes). Ціль −30%.",
+              "Першими бити: Dnipro (−€3.2k) та Kyiv (−€2.4k); у Kryvyi Rih/Zaporizhia найгірша маржа."],
+    "LOKO": ["Комісія 3.2% → 6–8% — головний важіль (own-delivery, Bolt не несе курʼєрки).",
+             "Знижки demand €0.47 + campaign €0.41/зам перевищують усю комісію — зменшити Bolt cost-share, таргетувати промо.",
+             "Own-delivery → eater fees=0: розглянути service fee на платформі як додатковий дохід.",
+             "33 міста — промо-бюджет у топ-міста, зрізати хвіст."],
+    "KOPIYKA": ["AOV €11.3 (найнижчий): MOV↑, бандли — розмити фіксовану курʼєрку.",
+                "54% замовлень з кампанією — зрізати неефективні, cost-share на партнера, таргет ELC/churn.",
+                "Refunds €0.60 — availability & picking.",
+                "Фокус — Одеса (весь обсяг і мінус тут)."],
+    "RUKAVYCHKA": ["Комісія 5.9% → 8% — головний важіль (промо вже низьке).",
+                   "CPO €1.97: батчинг + MOV у Львові (основне місто).",
+                   "Деприоритезувати дрібні міста з CPO €3+ (Ivano-Frankivsk)."],
+    "KOPIYKA MINI": ["Ті ж важелі, що й KOPIYKA, але гостріше: MOV↑ (AOV €11.4) + зрізати промо (63% замовлень).",
+                     "Mykolaiv (CPO €3.5, −10%) — пауза або лише own-delivery.",
+                     "Комісія 7.3% → 8%."],
+    "TAISTRA": ["Найближче до беззбитковості (−2.8%): достатньо трохи зрізати промо (55%) у Чернівцях.",
+                "CPO €2.14 — батчинг/зони. Комісія 8.5% вже добра.",
+                "Ternopil уже прибутковий — масштабувати цю модель."],
+    "SANTIM": ["Промо — головний важіль: incentives €1.63 + campaign €0.82/зам (67% замовлень). Перейти на partner cost-share.",
+               "GP додатній → прибрати надлишкове Bolt-фінансування = швидкий вихід у плюс.",
+               "CPO при AOV €16.2 прийнятний — фокус на incentives, не на курʼєрці."],
 }
 reco_cards = ""
 for d in DIAG:
     lis = "".join(f"<li>{x}</li>" for x in RECO[d["brand"]])
     reco_cards += (
         f'<div class="callout" style="border-left-color:var(--accent)">'
-        f'<h3>{d["brand"]} · CP {d["margin"]:.1f}% · {d["why"].split(".")[0]}</h3>'
+        f'<h3>{d["brand"]} · CP {d["margin"]:.1f}%</h3>'
         f'<p style="margin-bottom:6px">{d["why"]}</p>'
         f'<ul style="margin:0;padding-left:18px;color:var(--soft);font-size:14px">{lis}</ul></div>'
     )
+
+SIM = json.loads((HERE / "sim_data.json").read_text(encoding="utf-8")) if (HERE / "sim_data.json").exists() else {}
 
 # ── Chart data ──────────────────────────────────────────────────────────────────
 months = DATA["meta"]["months"]
@@ -382,8 +415,23 @@ HTML = f"""<!DOCTYPE html>
   <h2 class="section" id="diagnosis"><span class="bar"></span>Чому збиткові &amp; що робити — VARUS, KOPIYKA, SANTIM, LOKO</h2>
   <p class="section-desc">P&amp;L на замовлення (червень 2026). CP/зам. = Contribution Profit на одне доставлене замовлення. Own% — частка власної доставки партнера (при 100% Bolt не несе курʼєрських витрат). «Inc» = demand + supply incentives; «Camp» = campaign spend Bolt.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>AOV</th><th>Own%</th><th>Comm %GMV</th><th>Comm/ord</th><th>Eater fee/ord</th><th>CPO</th><th>Inc/ord</th><th>Refund/ord</th><th>Camp/ord</th><th>Camp ord%</th><th>CP/ord</th><th>CP margin</th></tr></thead><tbody>{diag_rows}</tbody></table></div>
-  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть у двох реченнях</h3><p><b>VARUS / KOPIYKA / SANTIM</b> (Bolt-доставка) збиткові, бо <b>курʼєрка (CPO €1.8–2.1) + промо + refunds</b> перевищують комісію (5.8–7.9%) та eater fees. <b>LOKO</b> (власна доставка, CPO=0) збиткове з іншої причини — <b>комісія лише 3.2%</b>, а Bolt-фінансовані знижки з'їдають її повністю.</p></div>
-  <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">{reco_cards}</div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть у двох реченнях</h3><p><b>Bolt-доставка</b> (VARUS, KOPIYKA, KOPIYKA MINI, SANTIM, TAISTRA, RUKAVYCHKA) збиткова, бо <b>курʼєрка (CPO €1.8–2.1) + промо + refunds</b> перевищують комісію (5.8–8.5%) та eater fees. <b>LOKO</b> (власна доставка, CPO=0) збиткове з іншої причини — <b>комісія лише 3.2%</b>, а Bolt-фінансовані знижки з'їдають її повністю.</p></div>
+
+  <h3 style="margin:22px 0 4px">Де найбільший мінус CP (по містах, червень 2026)</h3>
+  <p class="section-desc">Місто з найбільшим тягарем CP для кожного партнера — куди бити першими.</p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Місто #1 за втратами</th><th>Orders</th><th>CP</th><th>Margin</th><th>CPO</th><th>Camp ord%</th><th>Refund/ord</th><th>Коментар</th></tr></thead><tbody>{cityworst_rows}</tbody></table></div>
+
+  <h3 style="margin:26px 0 4px">Симулятор прибутковості</h3>
+  <p class="section-desc">Потягни повзунки: <b>+комісія</b> (у процентних пунктах до GMV) і <b>−промо</b> (скорочення Bolt-фінансованих знижок = campaign spend Bolt + demand incentives). Таблиця перерахує CP і маржу по кожному партнеру. Формула: новий CP = поточний CP + Δкомісія%·GMV + скорочення%·(Bolt промо).</p>
+  <div class="chartcard">
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:center;margin-bottom:6px">
+      <label style="font-size:14px">+ Комісія: <b><span id="commVal">+2.0</span> pp</b><br><input type="range" id="commSlider" min="0" max="6" step="0.5" value="2" style="width:240px"></label>
+      <label style="font-size:14px">− Промо (Bolt): <b><span id="promoVal">30</span>%</b><br><input type="range" id="promoSlider" min="0" max="100" step="5" value="30" style="width:240px"></label>
+      <div id="simTotal" style="font-size:14px;color:var(--soft)"></div>
+    </div>
+    <table class="matrix"><thead><tr><th>Partner</th><th>GMV</th><th>Комісія зараз</th><th>CP зараз</th><th>Margin зараз</th><th>→ CP новий</th><th>→ Margin новий</th><th>Статус</th></tr></thead><tbody id="simBody"></tbody></table>
+    <p class="cap" style="margin-top:8px">Спрощена модель (ceteris paribus): не враховує вплив на обсяг замовлень від зміни знижок/комісії. Bolt промо = campaign spend Bolt + demand incentives (червень 2026).</p>
+  </div>
 
   <h2 class="section" id="movers"><span class="bar"></span>Movers — хто зростає, хто падає</h2>
   <p class="section-desc">Партнери з GMV &gt; €3k у травні, за динамікою MoM.</p>
@@ -415,6 +463,36 @@ new Chart(document.getElementById('cityChart'),{{type:'bar',data:{{labels:{city_
   {{label:'GMV',data:{city_bar_gmv},backgroundColor:'#2563eb'}},
   {{label:'Contribution Profit',data:{city_bar_cp},backgroundColor:'#15a34a'}}]}},
   options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:eurTick}}}}}}}}}});
+
+// ── Profitability simulator ──
+const SIM={json.dumps(SIM, ensure_ascii=False)};
+const simOrder=['VARUS','LOKO','KOPIYKA','RUKAVYCHKA','KOPIYKA MINI','TAISTRA','SANTIM'];
+const fmtE=v=>{{const n=Math.abs(v);const s=n>=1000?'€'+(v/1000).toFixed(1)+'k':'€'+Math.round(v);return v<0?'−'+(n>=1000?(n/1000).toFixed(1)+'k':Math.round(n)):s;}};
+function renderSim(){{
+  const cpp=parseFloat(document.getElementById('commSlider').value);
+  const pc=parseFloat(document.getElementById('promoSlider').value);
+  document.getElementById('commVal').textContent='+'+cpp.toFixed(1);
+  document.getElementById('promoVal').textContent=pc.toFixed(0);
+  let body='',totOld=0,totNew=0,totGmv=0;
+  simOrder.forEach(k=>{{
+    const d=SIM[k]; if(!d)return;
+    const boltPromo=(d.camp_bolt||0)+(d.demand_inc||0);
+    const newCp=d.cp + cpp/100*d.gmv + pc/100*boltPromo;
+    const oldM=d.cp/d.gmv*100, newM=newCp/d.gmv*100;
+    totOld+=d.cp; totNew+=newCp; totGmv+=d.gmv;
+    const status=newCp>=0?'<span class="up">прибуткове</span>':'<span class="down">ще збиткове</span>';
+    const nCls=newCp>=0?'up':'down';
+    body+=`<tr><td class="axis">${{k}}</td><td>${{fmtE(d.gmv)}}</td><td>${{d.comm_pct.toFixed(1)}}%</td>`
+      +`<td><span class="down">${{fmtE(d.cp)}}</span></td><td><span class="down">${{oldM.toFixed(1)}}%</span></td>`
+      +`<td><span class="${{nCls}}">${{fmtE(newCp)}}</span></td><td><span class="${{nCls}}">${{newM.toFixed(1)}}%</span></td><td>${{status}}</td></tr>`;
+  }});
+  document.getElementById('simBody').innerHTML=body;
+  const om=totOld/totGmv*100, nm=totNew/totGmv*100;
+  document.getElementById('simTotal').innerHTML=`Разом (7 партнерів): CP <span class="down">${{fmtE(totOld)}}</span> (${{om.toFixed(1)}}%) → <span class="${{totNew>=0?'up':'down'}}">${{fmtE(totNew)}}</span> (${{nm.toFixed(1)}}%)`;
+}}
+document.getElementById('commSlider').addEventListener('input',renderSim);
+document.getElementById('promoSlider').addEventListener('input',renderSim);
+renderSim();
 </script>
 </body>
 </html>
