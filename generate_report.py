@@ -141,9 +141,9 @@ for c in cities:
         f'<td>{rate(c["camp_bolt_pct"])}</td><td>{rate0(c["camp_share"])}</td></tr>'
     )
 
-# ── Per-city partner breakdown (top 6 cities) ───────────────────────────────────
+# ── Per-city partner breakdown (top 15 cities) ──────────────────────────────────
 city_cards = ""
-for c in cities[:6]:
+for c in cities[:15]:
     seg_bits = []
     for s in SEGS:
         sd = c["segments"].get(s)
@@ -405,7 +405,7 @@ HTML = f"""<!DOCTYPE html>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>City</th><th>Orders</th><th>Eater fees</th><th>EF / order</th><th>EF %GMV</th><th>CPO</th><th>Camp spend Bolt</th><th>Camp spend Prov.</th><th>Camp discount</th><th>Camp Bolt %GMV</th><th>Camp ord%</th></tr></thead><tbody>{city_econ_rows}</tbody></table></div>
 
   <h2 class="section" id="deepdive"><span class="bar"></span>City deep-dive — які партнери формують місто</h2>
-  <p class="section-desc">Топ-6 міст: спліт по сегментах і топ-партнери з динамікою MoM та CP.</p>
+  <p class="section-desc">Топ-15 міст: спліт по сегментах і топ-партнери з динамікою MoM та CP.</p>
   {city_cards}
 
   <h2 class="section" id="partners"><span class="bar"></span>Partner leaderboard (top-{len(DATA['brands'])} by GMV)</h2>
