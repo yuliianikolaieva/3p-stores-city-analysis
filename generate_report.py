@@ -10,7 +10,7 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 DATA = json.loads((HERE / "threep_data.json").read_text(encoding="utf-8"))
-MLABEL = {"jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun", "jul": "Jul"}
+MLABEL = {"jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun", "jul": "Jul", "aug": "Aug"}
 SEGS = ["Enterprise", "Mid-market", "SMB"]
 CUR = DATA["meta"].get("cur", "jun")
 PREV = DATA["meta"].get("prev", "may")
@@ -202,27 +202,27 @@ def mover_rows(arr):
 # ── Profitability diagnosis (July 2026, per-order P&L for 7 focus brands) ────────
 # Значення з dbx fact_provider_monthly (per delivered order, липень 2026).
 DIAG = [
-    {"brand": "VARUS", "aov": 15.87, "own": 0, "comm_pct": 5.8, "comm": 0.92, "ef": 1.88, "cpo": 2.19,
-     "inc": 0.95, "refund": 0.29, "camp": 0.40, "camp_ord": 79, "cpo_ord": -0.70, "margin": -4.4,
-     "why": "Покращення до −4.4% (з −8.3% у червні): refunds впали до €0.29/зам, AOV зріс до €15.9. Але CPO €2.19 + дуже важке промо (79% замовлень з кампанією) + комісія 5.8% усе ще тримають у мінусі."},
-    {"brand": "LOKO", "aov": 15.15, "own": 100, "comm_pct": 3.2, "comm": 0.48, "ef": 0.00, "cpo": 0.00,
-     "inc": 0.06, "refund": 0.07, "camp": 0.03, "camp_ord": 1, "cpo_ord": -0.49, "margin": -3.2,
-     "why": "Власна доставка (CPO=0). Промо вже майже зрізане (€0.06+€0.03/зам), але CP усе одно −3.2% — комісія 3.2% (€0.48/зам) структурно не покриває змінні витрати платформи. Головний важіль — комісія."},
-    {"brand": "KOPIYKA", "aov": 11.94, "own": 0, "comm_pct": 7.4, "comm": 0.89, "ef": 1.56, "cpo": 1.93,
-     "inc": 0.79, "refund": 0.44, "camp": 0.30, "camp_ord": 56, "cpo_ord": -0.37, "margin": -3.1,
-     "why": "Покращення до −3.1% (з −6.4%): нижчі refunds. Лишається низький AOV €11.9 + CPO €1.93 + промо (56% замовлень)."},
-    {"brand": "RUKAVYCHKA", "aov": 12.56, "own": 0, "comm_pct": 6.0, "comm": 0.75, "ef": 1.87, "cpo": 2.32,
-     "inc": 0.55, "refund": 0.08, "camp": 0.07, "camp_ord": 2, "cpo_ord": -0.52, "margin": -4.1,
-     "why": "CPO зросла до €2.32 — головний драйвер; комісія лише 6.0%. Промо і refunds низькі — фокус на курʼєрці та комісії."},
-    {"brand": "KOPIYKA MINI", "aov": 11.87, "own": 0, "comm_pct": 7.3, "comm": 0.87, "ef": 1.59, "cpo": 2.12,
-     "inc": 0.90, "refund": 0.23, "camp": 0.33, "camp_ord": 59, "cpo_ord": -0.43, "margin": -3.6,
-     "why": "Низький AOV €11.9 + CPO €2.12 + промо (59% замовлень). У Миколаєві CPO €3.9, margin −12.6%."},
-    {"brand": "TAISTRA", "aov": 13.97, "own": 0, "comm_pct": 8.5, "comm": 1.19, "ef": 1.49, "cpo": 2.13,
-     "inc": 0.78, "refund": -0.03, "camp": 0.13, "camp_ord": 29, "cpo_ord": -0.33, "margin": -2.4,
-     "why": "Найближче до нуля (−2.4%). Комісія добра (8.5%), refunds ~0, промо зрізане до 29%. Лишилась тільки CPO €2.13."},
-    {"brand": "SANTIM", "aov": 15.80, "own": 3, "comm_pct": 9.0, "comm": 1.42, "ef": 1.85, "cpo": 2.16,
-     "inc": 1.24, "refund": 3.15, "camp": 0.59, "camp_ord": 63, "cpo_ord": -1.13, "margin": -7.2,
-     "why": "Погіршення до −7.2% через РІЗКИЙ сплеск refunds €3.15/зам у липні (з €0.55). Плюс промо (incentives €1.24 + campaign €0.59, 63% замовлень). Комісія вже висока (9.0%) — проблема саме в refunds."},
+    {"brand": "VARUS", "aov": 16.06, "own": 0, "comm_pct": 5.7, "comm": 0.92, "ef": 1.91, "cpo": 2.38,
+     "inc": 1.14, "refund": 0.31, "camp": 0.67, "camp_ord": 84, "cpo_ord": -0.50, "margin": -3.1,
+     "why": "Покращення до -3.1% (з -8.3% у червні). Головне зараз - CPO €2.38 (зросла) + надважке промо (84% замовлень, incentives €1.14/зам). Комісія 5.7%, refunds під контролем (€0.31)."},
+    {"brand": "LOKO", "aov": 14.71, "own": 100, "comm_pct": 3.2, "comm": 0.46, "ef": 0.00, "cpo": 0.00,
+     "inc": 0.70, "refund": -0.03, "camp": 0.70, "camp_ord": 10, "cpo_ord": -0.26, "margin": -1.8,
+     "why": "Власна доставка (CPO=0), майже беззбитково (-1.8%). Комісія 3.2% (€0.46/зам) низька, а Bolt-промо зросло (incentives €0.70/зам). Важелі - комісія + контроль промо."},
+    {"brand": "KOPIYKA", "aov": 12.14, "own": 2, "comm_pct": 7.5, "comm": 0.91, "ef": 1.50, "cpo": 1.87,
+     "inc": 1.10, "refund": 0.30, "camp": 0.73, "camp_ord": 83, "cpo_ord": -0.24, "margin": -2.0,
+     "why": "Майже беззбитково (-2.0%). Тисне надважке промо (83% замовлень, incentives €1.10 + campaign €0.73/зам) + CPO €1.87 при низькому AOV €12.1."},
+    {"brand": "RUKAVYCHKA", "aov": 13.70, "own": 10, "comm_pct": 6.2, "comm": 0.85, "ef": 1.76, "cpo": 2.26,
+     "inc": 1.40, "refund": 0.54, "camp": 0.89, "camp_ord": 16, "cpo_ord": -0.42, "margin": -3.0,
+     "why": "CPO €2.26 + високі incentives €1.40/зам - головні драйвери; комісія 6.2%. Промо за к-стю замовлень низьке (16%), але дороге per-order."},
+    {"brand": "KOPIYKA MINI", "aov": 12.24, "own": 1, "comm_pct": 7.1, "comm": 0.87, "ef": 1.60, "cpo": 2.16,
+     "inc": 1.37, "refund": -0.28, "camp": 0.81, "camp_ord": 81, "cpo_ord": -0.00, "margin": -0.0,
+     "why": "Вийшла в ~нуль (0.0%) завдяки refund-кредиту. Структурно тримається надважким промо (81% замовлень) + CPO €2.16 при AOV €12.2. Миколаїв CPO €3.5, -11.9%."},
+    {"brand": "TAISTRA", "aov": 13.29, "own": 3, "comm_pct": 8.7, "comm": 1.15, "ef": 1.31, "cpo": 1.81,
+     "inc": 0.84, "refund": -0.20, "camp": 0.33, "camp_ord": 11, "cpo_ord": 0.08, "margin": 0.6,
+     "why": "Уже прибуткова (+0.6%!). Добра комісія (8.7%), низьке промо (11% замовлень), refunds ~0, нижча CPO €1.81. Модель для масштабування."},
+    {"brand": "SANTIM", "aov": 15.44, "own": 2, "comm_pct": 8.2, "comm": 1.26, "ef": 1.80, "cpo": 2.06,
+     "inc": 1.21, "refund": 1.25, "camp": 0.93, "camp_ord": 82, "cpo_ord": -0.16, "margin": -1.0,
+     "why": "Відновлення до -1.0% (з -7.2% у липні - сплеск refunds минув). Тисне надважке промо (82% замовлень, incentives €1.21 + campaign €0.93). Комісія висока (8.2%)."},
 ]
 diag_rows = ""
 for d in DIAG:
@@ -236,13 +236,13 @@ for d in DIAG:
 
 # Де найбільший мінус CP (місто з найбільшим тягарем CP у липні 2026)
 CITYWORST = [
-    ("VARUS", "Dnipro", 2619, -2995, -7.8, 2.06, 79, 0.38, "Далі Zaporizhia (−€0.9k, −8.4%, CPO €2.65). Промо 79% замовлень — головний важіль."),
-    ("LOKO", "Kyiv", 2023, -904, -2.9, 0.0, 1, 0.02, "Збиток рівномірний (~−3% скрізь) — системна проблема комісії 3.2%, не локальна."),
-    ("KOPIYKA", "Odesa", 1335, -483, -3.0, 1.93, 56, 0.44, "Присутня майже лише в Одесі — весь мінус тут."),
-    ("SANTIM", "Odesa", 359, -406, -7.2, 2.16, 63, 3.15, "Єдине місто. Сплеск refunds €3.15/зам у липні — головна причина просідання."),
-    ("RUKAVYCHKA", "Lviv", 598, -297, -4.0, 2.28, 2, 0.08, "Практично лише Львів. Ivano-Frankivsk — CPO €3.4, деприоритезувати."),
-    ("KOPIYKA MINI", "Odesa", 406, -121, -2.5, 1.93, 59, 0.21, "Mykolaiv: −12.6% margin, CPO €3.9 — розглянути паузу/own-delivery."),
-    ("TAISTRA", "Chernivtsi", 451, -215, -3.4, 2.17, 24, 0.03, "Основне місто; промо вже помірне (24%). Головне — CPO."),
+    ("VARUS", "Dnipro", 4033, -2667, -4.3, 2.18, 87, 0.34, "Далі Zaporizhia (-€1.2k, -9.2%, CPO €2.89). Промо 87% - головний важіль."),
+    ("LOKO", "Kyiv", 2000, -534, -1.8, 0.0, 7, -0.02, "Збиток рівномірний (~-2% скрізь) - системна проблема комісії 3.2%."),
+    ("KOPIYKA", "Odesa", 2054, -484, -1.9, 1.86, 83, 0.30, "Майже весь обсяг в Одесі; промо 83%."),
+    ("RUKAVYCHKA", "Lviv", 742, -285, -2.8, 2.25, 16, 0.50, "Практично лише Львів. Ivano-Frankivsk - CPO €3.7, деприоритезувати."),
+    ("SANTIM", "Odesa", 454, -74, -1.0, 2.06, 82, 1.25, "Єдине місто. Refunds повернулись до норми vs липневий сплеск."),
+    ("KOPIYKA MINI", "Mykolaiv", 62, -92, -11.9, 3.48, 82, 0.42, "Odesa вже +1.9%. Миколаїв - CPO €3.5, пауза/own-delivery."),
+    ("TAISTRA", "Ternopil", 38, -11, -2.2, 1.72, 66, 0.01, "Бренд загалом у плюсі; Хмельницький +0.9%."),
 ]
 cityworst_rows = "".join(
     f'<tr class="neg"><td class="axis">{b}</td><td>{c}</td><td>{o:,}</td>'
@@ -252,30 +252,29 @@ cityworst_rows = "".join(
 )
 
 RECO = {
-    "VARUS": ["Промо: 79% замовлень з кампанією — головний важіль зараз. Зрізати глибину/охоплення, перевести на partner cost-share, таргет ELC/churn.",
-              "Комісія 5.8% → 8–10% (партнер №1 за GMV — є переговорна сила).",
-              "CPO €2.19: MOV↑ / small-order fee, батчинг у Дніпрі та Запоріжжі (CPO €2.6), звузити зони.",
-              "Першими бити: Dnipro (−€3.0k, промо 79%) та Zaporizhia (−8.4%). Refunds уже покращились (€0.29) — тримати."],
-    "LOKO": ["Комісія 3.2% → 6–8% — ЄДИНИЙ реальний важіль (own-delivery, промо вже майже зрізане).",
-             "CP усе одно −3.2% при мінімальному промо → комісія структурно замала, щоб покрити змінні витрати платформи.",
-             "Own-delivery → eater fees=0: розглянути service fee на платформі як додатковий дохід.",
-             "Збиток рівномірний по всіх ~30 містах — рішення має бути на рівні контракту, не локальне."],
-    "KOPIYKA": ["AOV €11.9 (найнижчий): MOV↑, бандли — розмити фіксовану курʼєрку.",
-                "56% замовлень з кампанією — зрізати неефективні, cost-share на партнера, таргет ELC/churn.",
-                "Refunds €0.44 — availability & picking (вже покращення vs червень).",
-                "Фокус — Одеса (весь обсяг і мінус тут)."],
-    "RUKAVYCHKA": ["CPO €2.32 (зросла) — головний важіль: батчинг + MOV у Львові (основне місто).",
-                   "Комісія 6.0% → 8%.",
-                   "Деприоритезувати дрібні міста з CPO €3+ (Ivano-Frankivsk €3.4)."],
-    "KOPIYKA MINI": ["Ті ж важелі, що й KOPIYKA: MOV↑ (AOV €11.9) + зрізати промо (59% замовлень).",
-                     "Mykolaiv (CPO €3.9, −12.6%) — пауза або лише own-delivery.",
-                     "Комісія 7.3% → 8%."],
-    "TAISTRA": ["Найближче до беззбитковості (−2.4%): промо вже зрізане до 29%, refunds ~0.",
-                "Лишилась тільки CPO €2.13 — батчинг/зони у Чернівцях → вихід у плюс.",
-                "Комісія 8.5% вже добра — не чіпати."],
-    "SANTIM": ["Refunds — критичний фікс: €3.15/зам у липні (сплеск з €0.55) фактично й обвалив CP. Розібрати причину (availability/спори/фрод), ціль <€0.6.",
-               "Промо: incentives €1.24 + campaign €0.59/зам (63% замовлень) — на partner cost-share.",
-               "Комісія 9.0% вже висока — проблема НЕ в ній; фокус на refunds + промо."],
+    "VARUS": ["Промо: 84% замовлень з кампанією (incentives €1.14/зам) — головний важіль. Зрізати глибину/охоплення, partner cost-share, таргет ELC/churn.",
+              "Комісія 5.7% → 8–10% (партнер №1 за GMV, +49% MoM — є переговорна сила).",
+              "CPO €2.38 (зросла): батчинг у Дніпрі та Запоріжжі (CPO €2.9), MOV↑, звузити зони.",
+              "Першими бити: Dnipro (−€2.7k) та Zaporizhia (−9.2%). Refunds уже під контролем (€0.31)."],
+    "LOKO": ["Комісія 3.2% → 6–8% — головний важіль (own-delivery, Bolt не несе курʼєрки).",
+             "Промо зросло (incentives €0.70/зам при лише 10% замовлень) — переглянути ефективність.",
+             "Майже беззбитково (−1.8%) — невеликий крок по комісії виводить у плюс.",
+             "Own-delivery → eater fees=0: розглянути service fee як додатковий дохід."],
+    "KOPIYKA": ["Промо — головний важіль: 83% замовлень, incentives €1.10 + campaign €0.73/зам. Partner cost-share + таргет.",
+                "AOV €12.1 (низький): MOV↑, бандли — розмити CPO €1.87.",
+                "Фокус — Одеса (весь обсяг тут)."],
+    "RUKAVYCHKA": ["CPO €2.26 + incentives €1.40/зам — головні драйвери: батчинг + перегляд промо-глибини у Львові.",
+                   "Комісія 6.2% → 8%.",
+                   "Деприоритезувати дрібні міста з CPO €3+ (Ivano-Frankivsk €3.7)."],
+    "KOPIYKA MINI": ["Уже в ~нулі — закріпити: зрізати надважке промо (81% замовлень) + MOV↑ (AOV €12.2).",
+                     "Mykolaiv (CPO €3.5, −11.9%) — пауза або лише own-delivery.",
+                     "Комісія 7.1% → 8%."],
+    "TAISTRA": ["Уже прибуткова (+0.6%) — еталон: низьке промо (11%), добра комісія (8.7%), refunds ~0, CPO €1.81.",
+                "Масштабувати цю модель на інші бренди/міста.",
+                "Тримати промо-дисципліну."],
+    "SANTIM": ["Промо — головний важіль: 82% замовлень, incentives €1.21 + campaign €0.93/зам. Partner cost-share.",
+               "Refunds повернулись до норми (€1.25 з €3.15) — тримати контроль.",
+               "Комісія висока (8.2%) — проблема не в ній; фокус на промо + CPO €2.06."],
 }
 reco_cards = ""
 for d in DIAG:
@@ -288,6 +287,51 @@ for d in DIAG:
     )
 
 SIM = json.loads((HERE / "sim_data.json").read_text(encoding="utf-8")) if (HERE / "sim_data.json").exists() else {}
+
+# ── Commission tab (Jan–Aug 2026) ───────────────────────────────────────────────
+COMM = json.loads((HERE / "commission_data.json").read_text(encoding="utf-8"))
+cmi = COMM["total"][-1]        # latest month (Aug)
+cmi_prev = COMM["total"][-2]   # Jul
+cm_first = COMM["total"][0]    # Jan
+# Segment monthly commission %GMV table (ENT / SMB; MM reclassified ≈0)
+def _pctcell(v):
+    return "<td>–</td>" if v is None else f"<td>{v:.1f}%</td>"
+
+
+comm_seg_rows = ""
+for seg in ["Enterprise", "SMB"]:
+    cells = "".join(_pctcell(r["comm_pct"]) for r in COMM["segment"][seg])
+    comm_seg_rows += f'<tr><td class="axis">{seg} · comm %GMV</td>{cells}</tr>'
+# total row
+tot_cells = "".join(f'<td>{r["comm_pct"]:.1f}%</td>' for r in COMM["total"])
+comm_seg_rows += f'<tr class="pos"><td class="axis">TOTAL · comm %GMV</td>{tot_cells}</tr>'
+aov_cells = "".join(f'<td>€{r["aov"]:.1f}</td>' for r in COMM["total"])
+comm_seg_rows += f'<tr><td class="axis">TOTAL · AOV</td>{aov_cells}</tr>'
+comm_month_headers = "".join(f"<th>{m}</th>" for m in COMM["months"])
+
+# Partner commission leaderboard (Aug)
+comm_partner_rows = ""
+for p in COMM["partners"]:
+    mom = p.get("mom")
+    comm_partner_rows += (
+        f'<tr><td class="axis">{p["brand"]}</td><td>{p["seg"]}</td>'
+        f'<td>{eur(p["comm"])}</td><td>{p["share"]:.1f}%</td><td>{p["comm_pct"]:.1f}%</td>'
+        f'<td>€{p["aov"]:.1f}</td><td>{delta_span(mom)}</td></tr>'
+    )
+
+# New-merchant top-brand detail (Aug)
+tb_rows = ""
+for d in sorted(COMM["aug_topbrand"], key=lambda x: -x["comm"]):
+    stat = "активний" if d["comm"] > 0 else "greenfield (0 нових)"
+    tone = "pos" if d["comm"] > 0 else "neg"
+    rate = f'{d["comm_pct"]:.1f}%' if d["gmv"] else "–"
+    aovs = f'€{d["aov"]:.1f}' if d.get("aov") else "–"
+    tb_rows += (
+        f'<tr class="{tone}"><td class="axis">{d["brand"]}</td><td>{eur(d["comm"])}</td>'
+        f'<td>{eur(d["gmv"])}</td><td>{d["providers"]}</td><td>{rate}</td><td>{aovs}</td>'
+        f'<td style="text-align:left">{stat}</td></tr>'
+    )
+tgt = COMM["targets"]
 
 # ── Chart data ──────────────────────────────────────────────────────────────────
 months = DATA["meta"]["months"]
@@ -365,6 +409,7 @@ HTML = f"""<!DOCTYPE html>
   <span class="brand">3P Stores · Bolt Food UA</span>
   <a href="#top">Overview</a>
   <a href="#segments">Segments</a>
+  <a href="#commission">Commission</a>
   <a href="#cities">Cities</a>
   <a href="#econ">Eater fees · CPO · Campaigns</a>
   <a href="#deepdive">City deep-dive</a>
@@ -389,20 +434,63 @@ HTML = f"""<!DOCTYPE html>
   <section id="overview">
     <div class="callout">
       <h3>Головний висновок: обсяг і маржа рознесені по сегментах</h3>
-      <p>Enterprise робить <b>~84% GMV</b>, але працює біля нуля по CP (~0%; велика продуктова роздрібниця — VARUS, KOPIYKA — тягне маржу вниз). SMB — лише ~10% GMV, але це найприбутковіший сегмент (CP margin ~13%). Mid-market малий (~6% GMV, ~3%). Зростання GMV (€513k у липні, +16% MoM) іде переважно за рахунок майже беззбиткового Enterprise. Багато «3P Stores» — це фактично крафт-пиво/напої (LOKO, HOP HEY, BEER MARKET, REMESLO BREWERY), а не продуктовий рітейл.</p>
+      <p>Enterprise робить <b>~88% GMV</b> і вже вийшов у ~нуль по CP (+0.6%). SMB — ~12% GMV, найприбутковіший сегмент (CP margin ~13%). Mid-market у 2026 реклесифіковано в ENT/SMB (≈0). Загальний CP уперше стабільно додатний (+€13.5k у серпні при GMV €649k). Багато «3P Stores» — це фактично крафт-пиво/напої (LOKO, HOP HEY, BEER MARKET, REMESLO BREWERY), а не продуктовий рітейл.</p>
     </div>
   </section>
 
   <h2 class="section" id="segments"><span class="bar"></span>Growth &amp; profitability by segment</h2>
-  <p class="section-desc">Enterprise / Mid-market / SMB (business_segment_v2), {PERIOD}.</p>
+  <p class="section-desc">Enterprise / Mid-market / SMB (business_segment_v2), {PERIOD}. Примітка: Mid-market у 2026 реклесифіковано в ENT/SMB, тож фактично сегментація зараз = ENT + SMB.</p>
   <div class="two">
     <div class="chartcard"><h3>GMV by segment (€ / month)</h3><p class="cap">Source: dbx fact_provider_monthly</p><canvas id="gmvChart" height="200"></canvas></div>
     <div class="chartcard"><h3>Contribution Profit by segment (€ / month)</h3><p class="cap">Below zero = loss-making</p><canvas id="cpChart" height="200"></canvas></div>
   </div>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Segment</th><th>GMV ({CURLBL})</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>Eater fee/ord</th><th>EF %GMV</th><th>CPO</th><th>Camp Bolt %GMV</th><th>Camp ord%</th><th>Partners</th></tr></thead><tbody>{seg_rows}</tbody></table></div>
 
+  <h2 class="section" id="commission"><span class="bar"></span>Commission — рівень, тренд, партнери та нові мерчанти</h2>
+  <p class="section-desc">Період: <b>січень–серпень 2026</b> (місячно), останній повний місяць — серпень. Total commission from GMV, AOV + розріз ENT / SMB / MM. Джерело: dbx <code>main.ng_delivery.fact_provider_monthly</code>.</p>
+  <div class="grid kpis">
+    <div class="kpi base"><div class="n">{eur(cmi['comm'])}</div><div class="l">Total commission (Aug)</div></div>
+    <div class="kpi"><div class="n">{cmi['comm_pct']:.1f}%</div><div class="l">Commission %GMV (Jan {cm_first['comm_pct']:.1f}% → Aug)</div></div>
+    <div class="kpi"><div class="n">€{cmi['aov']:.1f}</div><div class="l">AOV (Aug) · Jan €{cm_first['aov']:.1f}</div></div>
+    <div class="kpi opt"><div class="n">{eur(tgt['new_top']['aug'] + tgt['new_other_ent']['aug'])}</div><div class="l">Commission нових мерчантів (Aug)</div></div>
+    <div class="kpi"><div class="n">{cmi['orders']/1000:.1f}k</div><div class="l">Orders (Aug)</div></div>
+  </div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Головне про рівень комісії</h3><p>Блендована ставка <b>падає з 14.6% (січ) до 11.1% (сер)</b> — не через зниження ставок, а через <b>міксшифт</b>: низькокомісійний grocery (VARUS 5.7%, LOKO 3.2%, KOPIYKA 7.5%) росте швидше за високомаржинальний напійний ритейл (REMESLO 28.5%, BEERLAND 23%, HOP HEY 19%). SMB тримає ~23% comm%GMV, Enterprise ~9–10%. Mid-market у 2026 фактично реклесифіковано в ENT/SMB (≈0).</p></div>
+  <div class="two">
+    <div class="chartcard"><h3>Commission %GMV — тренд по сегментах</h3><p class="cap">Total / Enterprise / SMB · Jan–Aug 2026</p><canvas id="commPctChart" height="210"></canvas></div>
+    <div class="chartcard"><h3>Commission (€) &amp; AOV — total</h3><p class="cap">Стовпці — commission €, лінія — AOV €</p><canvas id="commEurChart" height="210"></canvas></div>
+  </div>
+  <h3 style="margin:22px 0 4px">Commission %GMV &amp; AOV — помісячно</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Метрика</th>{comm_month_headers}</tr></thead><tbody>{comm_seg_rows}</tbody></table></div>
+
+  <h3 style="margin:22px 0 4px">Які партнери формують комісію (Aug 2026)</h3>
+  <p class="section-desc">Топ-15 за абсолютною комісією. VARUS — №1 за обсягом (18% усієї комісії), але низька ставка 5.7%; напійні бренди дають високий %GMV.</p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Commission</th><th>Share</th><th>Comm %GMV</th><th>AOV</th><th>MoM</th></tr></thead><tbody>{comm_partner_rows}</tbody></table></div>
+
+  <h3 style="margin:26px 0 4px">Нові мерчанти — цільові метрики (для квартальних цілей)</h3>
+  <p class="section-desc">«Новий мерчант» = провайдер із першим доставленим замовленням у 2026 (first_delivered_order_ts ≥ 2026-01-01). Дві цільові метрики: <b>Commission of New merchants (Top Brands)</b> = LOKO, VARUS, RUKAVYCHKA, ATB, FORA, AUCHAN, Біле та Сухе; <b>Commission of New merchants (Other ENT)</b> = решта нових Enterprise.</p>
+  <div class="grid kpis" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi opt"><div class="n">{eur(tgt['new_top']['aug'])}</div><div class="l">New · Top Brands — Aug/міс</div></div>
+    <div class="kpi"><div class="n">{eur(tgt['new_top']['cum'])}</div><div class="l">New · Top Brands — Jan–Aug сума</div></div>
+    <div class="kpi opt"><div class="n">{eur(tgt['new_other_ent']['aug'])}</div><div class="l">New · Other ENT — Aug/міс</div></div>
+    <div class="kpi"><div class="n">{eur(tgt['new_other_ent']['cum'])}</div><div class="l">New · Other ENT — Jan–Aug сума</div></div>
+  </div>
+  <div class="chartcard"><h3>Commission нових мерчантів — помісячно (stacked)</h3><p class="cap">New · Top Brands / New · Other ENT / New · MM&amp;SMB · Jan–Aug 2026</p><canvas id="bucketChart" height="150"></canvas></div>
+  <h3 style="margin:22px 0 4px">Нові мерчанти по Top Brands (Aug)</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Top Brand</th><th>Commission</th><th>GMV</th><th>New providers</th><th>Comm %GMV</th><th>AOV</th><th>Статус</th></tr></thead><tbody>{tb_rows}</tbody></table></div>
+  <div class="callout" style="border-left-color:var(--accent)"><h3>Що це означає для цілей</h3><p><b>Активні зараз:</b> VARUS (56 нових, €13.3k/міс, ставка 5.7%) і LOKO (118 нових, €2.5k/міс, ставка 3.2% — own-delivery) дають майже всю «New · Top Brands» комісію. <b>Greenfield:</b> ATB (845 провайдерів у базі) та FORA (278) присутні, але <b>0 нових активних у 2026</b> — величезний потенціал онбордингу/активації. <b>AUCHAN та «Біле та Сухе» ще відсутні</b> в UA 3P Stores — це нові логотипи для залучення. Low commission grocery (VARUS/LOKO) варто балансувати вищою ставкою або eater fees.</p></div>
+  <div class="chartcard">
+    <h3>Калькулятор цілей на квартал</h3>
+    <p class="cap">Встав місячний таргет по кожній метриці — покаже приріст vs серпень і квартальну суму (×3).</p>
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;margin:6px 0">
+      <label style="font-size:14px">New · Top Brands, €/міс<br><input type="number" id="tgtTop" value="{tgt['new_top']['aug']}" step="1000" style="width:160px;padding:6px;border:1px solid var(--line);border-radius:8px"></label>
+      <label style="font-size:14px">New · Other ENT, €/міс<br><input type="number" id="tgtOther" value="{tgt['new_other_ent']['aug']}" step="1000" style="width:160px;padding:6px;border:1px solid var(--line);border-radius:8px"></label>
+    </div>
+    <table class="matrix"><thead><tr><th>Метрика</th><th>Aug (факт)</th><th>Ваш таргет/міс</th><th>Приріст vs Aug</th><th>Квартал (×3)</th></tr></thead><tbody id="tgtBody"></tbody></table>
+  </div>
+
   <h2 class="section" id="cities"><span class="bar"></span>City ranking — фінанс &amp; опс</h2>
-  <p class="section-desc">Топ-5 міст (Kyiv, Dnipro, Lviv, Kharkiv, Odesa) = ~75% GMV; Kyiv сам ~37%. Зелений рядок — CP margin ≥ 5%, червоний — збиткове місто.</p>
+  <p class="section-desc">Топ-5 міст (Kyiv, Dnipro, Lviv, Odesa, Kharkiv) = ~73% GMV; Kyiv сам ~35%. Зелений рядок — CP margin ≥ 5%, червоний — збиткове місто.</p>
   <div class="chartcard"><h3>GMV &amp; Contribution Profit — top 12 cities (Jun 2026)</h3><p class="cap">Source: dbx fact_provider_monthly</p><canvas id="cityChart" height="140"></canvas></div>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>City</th><th>GMV</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>AOV</th><th>Failed</th><th>Late</th></tr></thead><tbody>{city_rows}</tbody></table></div>
 
@@ -415,15 +503,15 @@ HTML = f"""<!DOCTYPE html>
   {city_cards}
 
   <h2 class="section" id="partners"><span class="bar"></span>Partner leaderboard (top-{len(DATA['brands'])} by GMV)</h2>
-  <p class="section-desc">VARUS — №1 за GMV (~€156k, +54% MoM), і найбільший тягар по CP (−€6.9k, хоча маржа покращилась із −8.3% до −4.4%).</p>
+  <p class="section-desc">VARUS — №1 за GMV (~€233k, +49% MoM), і найбільший тягар по CP (−€7.2k, хоча маржа покращилась із −8.3% до −3.1%).</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Main city</th><th>Cities</th><th>GMV</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Eater fee/ord</th><th>CPO</th><th>Camp ord%</th></tr></thead><tbody>{brand_rows}</tbody></table></div>
 
   <h2 class="section" id="diagnosis"><span class="bar"></span>Чому збиткові &amp; що робити — VARUS, KOPIYKA, SANTIM, LOKO</h2>
-  <p class="section-desc">P&amp;L на замовлення (липень 2026). CP/зам. = Contribution Profit на одне доставлене замовлення. Own% — частка власної доставки партнера (при 100% Bolt не несе курʼєрських витрат). «Inc» = demand + supply incentives; «Camp» = campaign spend Bolt.</p>
+  <p class="section-desc">P&amp;L на замовлення (серпень 2026). CP/зам. = Contribution Profit на одне доставлене замовлення. Own% — частка власної доставки партнера (при 100% Bolt не несе курʼєрських витрат). «Inc» = demand + supply incentives; «Camp» = campaign spend Bolt.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>AOV</th><th>Own%</th><th>Comm %GMV</th><th>Comm/ord</th><th>Eater fee/ord</th><th>CPO</th><th>Inc/ord</th><th>Refund/ord</th><th>Camp/ord</th><th>Camp ord%</th><th>CP/ord</th><th>CP margin</th></tr></thead><tbody>{diag_rows}</tbody></table></div>
-  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть у двох реченнях (липень 2026)</h3><p><b>Bolt-доставка</b> (VARUS, KOPIYKA, KOPIYKA MINI, SANTIM, TAISTRA, RUKAVYCHKA) збиткова, бо <b>курʼєрка (CPO €1.9–2.3) + промо + refunds</b> перевищують комісію (5.8–9.0%) та eater fees. У більшості маржа покращилась vs червень (нижчі refunds), окрім <b>SANTIM</b> — там сплеск refunds €3.15/зам. <b>LOKO</b> (власна доставка, CPO=0) збиткове з іншої причини — промо вже зрізане, але <b>комісія 3.2%</b> структурно не покриває витрати платформи.</p></div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть (серпень 2026)</h3><p>Більшість фокус-партнерів у серпні наблизились до беззбитковості (SANTIM відновився після липневого сплеску refunds, TAISTRA вже <b>+0.6%</b>, KOPIYKA MINI ~0%). Головний спільний тягар тепер — <b>надважке промо</b> (VARUS/KOPIYKA/SANTIM/KOPIYKA MINI: 80–84% замовлень з кампанією) + <b>CPO €1.8–2.4</b>. <b>LOKO</b> (own-delivery, CPO=0) стримується низькою комісією 3.2%.</p></div>
 
-  <h3 style="margin:22px 0 4px">Де найбільший мінус CP (по містах, липень 2026)</h3>
+  <h3 style="margin:22px 0 4px">Де найбільший мінус CP (по містах, серпень 2026)</h3>
   <p class="section-desc">Місто з найбільшим тягарем CP для кожного партнера — куди бити першими.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Місто #1 за втратами</th><th>Orders</th><th>CP</th><th>Margin</th><th>CPO</th><th>Camp ord%</th><th>Refund/ord</th><th>Коментар</th></tr></thead><tbody>{cityworst_rows}</tbody></table></div>
 
@@ -436,7 +524,7 @@ HTML = f"""<!DOCTYPE html>
       <div id="simTotal" style="font-size:14px;color:var(--soft)"></div>
     </div>
     <table class="matrix"><thead><tr><th>Partner</th><th>GMV</th><th>Комісія зараз</th><th>CP зараз</th><th>Margin зараз</th><th>→ CP новий</th><th>→ Margin новий</th><th>Статус</th></tr></thead><tbody id="simBody"></tbody></table>
-    <p class="cap" style="margin-top:8px">Спрощена модель (ceteris paribus): не враховує вплив на обсяг замовлень від зміни знижок/комісії. Bolt промо = campaign spend Bolt + demand incentives (липень 2026).</p>
+    <p class="cap" style="margin-top:8px">Спрощена модель (ceteris paribus): не враховує вплив на обсяг замовлень від зміни знижок/комісії. Bolt промо = campaign spend Bolt + demand incentives (серпень 2026).</p>
   </div>
 
   <h2 class="section" id="movers"><span class="bar"></span>Movers — хто зростає, хто падає</h2>
@@ -447,7 +535,7 @@ HTML = f"""<!DOCTYPE html>
   </div>
 
   <footer>
-    <p>CP = Contribution Profit (invoiced). Сегмент = business_segment_v2 (dim_provider_v2). MoM = липень vs червень 2026. Ставки failed/late зважені за замовленнями. Період даних: {PERIOD}. Міста з нульовим GMV у поточному місяці виключені.</p>
+    <p>CP = Contribution Profit (invoiced). Сегмент = business_segment_v2 (dim_provider_v2). MoM = серпень vs липень 2026. Ставки failed/late зважені за замовленнями. Період даних: {PERIOD}. Міста з нульовим GMV у поточному місяці виключені.</p>
     <p>Джерело даних: Databricks <code>ng_delivery_spark.fact_provider_monthly</code> + <code>dim_provider_v2</code>, вертикаль <code>store_3p_ent</code> + <code>store_3p_mm_smb</code>, country_code = 'ua'. Згенеровано з <code>threep_data.json</code>.</p>
   </footer>
 </div>
@@ -499,6 +587,42 @@ function renderSim(){{
 document.getElementById('commSlider').addEventListener('input',renderSim);
 document.getElementById('promoSlider').addEventListener('input',renderSim);
 renderSim();
+
+// ── Commission tab ──
+const COMM={json.dumps(COMM, ensure_ascii=False)};
+const cml=COMM.months;
+new Chart(document.getElementById('commPctChart'),{{type:'line',data:{{labels:cml,datasets:[
+  {{label:'Total',data:COMM.total.map(r=>r.comm_pct),borderColor:'#13203a',backgroundColor:'#13203a',tension:.3,borderWidth:2}},
+  {{label:'Enterprise',data:COMM.segment.Enterprise.map(r=>r.comm_pct),borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3}},
+  {{label:'SMB',data:COMM.segment.SMB.map(r=>r.comm_pct),borderColor:'#15a34a',backgroundColor:'#15a34a',tension:.3}}]}},
+  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>v+'%'}}}}}}}}}});
+new Chart(document.getElementById('commEurChart'),{{data:{{labels:cml,datasets:[
+  {{type:'bar',label:'Commission €',data:COMM.total.map(r=>r.comm),backgroundColor:'#2563eb',yAxisID:'y'}},
+  {{type:'line',label:'AOV €',data:COMM.total.map(r=>r.aov),borderColor:'#d1493f',backgroundColor:'#d1493f',tension:.3,yAxisID:'y1'}}]}},
+  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{
+    y:{{position:'left',ticks:{{callback:eurTick}}}},
+    y1:{{position:'right',grid:{{drawOnChartArea:false}},ticks:{{callback:v=>'€'+v}}}}}}}}}});
+new Chart(document.getElementById('bucketChart'),{{type:'bar',data:{{labels:cml,datasets:[
+  {{label:'New · Top Brands',data:COMM.buckets.map(r=>r.new_top),backgroundColor:'#2563eb'}},
+  {{label:'New · Other ENT',data:COMM.buckets.map(r=>r.new_other_ent),backgroundColor:'#0e7faa'}},
+  {{label:'New · MM&SMB',data:COMM.buckets.map(r=>r.new_mm_smb),backgroundColor:'#15a34a'}}]}},
+  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{x:{{stacked:true}},y:{{stacked:true,ticks:{{callback:eurTick}}}}}}}}}});
+// target calculator
+const augTop=COMM.targets.new_top.aug, augOther=COMM.targets.new_other_ent.aug;
+function renderTgt(){{
+  const t=parseFloat(document.getElementById('tgtTop').value)||0;
+  const o=parseFloat(document.getElementById('tgtOther').value)||0;
+  const row=(name,aug,val)=>{{
+    const up=aug?((val/aug-1)*100):0; const cls=val>=aug?'up':'down';
+    return `<tr><td class="axis">${{name}}</td><td>${{fmtE(aug)}}</td><td>${{fmtE(val)}}</td>`
+      +`<td><span class="${{cls}}">${{(up>0?'+':'')+up.toFixed(0)}}%</span></td><td>${{fmtE(val*3)}}</td></tr>`;
+  }};
+  document.getElementById('tgtBody').innerHTML=row('New · Top Brands',augTop,t)+row('New · Other ENT',augOther,o)
+    +`<tr class="pos"><td class="axis">Разом нові</td><td>${{fmtE(augTop+augOther)}}</td><td>${{fmtE(t+o)}}</td><td></td><td>${{fmtE((t+o)*3)}}</td></tr>`;
+}}
+document.getElementById('tgtTop').addEventListener('input',renderTgt);
+document.getElementById('tgtOther').addEventListener('input',renderTgt);
+renderTgt();
 </script>
 </body>
 </html>
