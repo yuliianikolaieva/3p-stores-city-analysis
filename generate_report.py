@@ -304,10 +304,13 @@ q4o_comm = eur(q4o["TOTAL"]["comm"]); q4o_pct = f'{q4o["TOTAL"]["comm_pct"]:.1f}
 q4o_aov = f'{q4o["TOTAL"]["aov"]:.2f}'; q4p_comm = eur(q4p["TOTAL"]["comm"])
 comm_month_headers = "".join(f"<th>{m}</th>" for m in CM_MONTHS)
 def _pct_cell(v): return "<td>-</td>" if v is None else f"<td>{v:.1f}%</td>"
-def _pct_row(grp, cls=""):
-    cells = "".join(_pct_cell(v) for v in _col("opt", grp, "comm_pct"))
-    return f'<tr class="{cls}"><td class="axis">{GLBL[grp]} · %GMV</td>{cells}</tr>'
-comm_grp_rows = "".join(_pct_row(g, "pos" if g == "TOTAL" else "") for g in GRP_ORDER)
+def _ratio_row(grp, key, tag, cls=""):
+    cells = "".join(_pct_cell(v) for v in _col("opt", grp, key))
+    return f'<tr class="{cls}"><td class="axis">{GLBL[grp]} · {tag}</td>{cells}</tr>'
+comm_grp_rows = ""
+for _g in GRP_ORDER:
+    comm_grp_rows += _ratio_row(_g, "comm_pct", "%GMV", "pos" if _g == "TOTAL" else "")
+    comm_grp_rows += _ratio_row(_g, "comm_aov", "%AOV")
 _aov_cells = "".join(("<td>-</td>" if v is None else f"<td>€{v:.1f}</td>") for v in _col("opt", "TOTAL", "aov"))
 _eur_cells = "".join(f"<td>{eur(v)}</td>" for v in _col("opt", "TOTAL", "comm"))
 comm_grp_rows += f'<tr><td class="axis">Total · AOV</td>{_aov_cells}</tr>'
@@ -460,11 +463,12 @@ HTML = f"""<!DOCTYPE html>
     <div class="kpi"><div class="n">{q4o_pct}</div><div class="l">Q4ʼ26 commission %GMV</div></div>
     <div class="kpi"><div class="n">€{q4o_aov}</div><div class="l">Q4ʼ26 AOV (Opt)</div></div>
   </div>
-  <div class="callout" style="border-left-color:var(--warn)"><h3>Головне про комісію</h3><p>Блендована ставка падає з <b>~14.5% (січ) до ~9% (Q4 прогноз)</b> — TOP Brands (VARUS/LOKO/ATB/Fora ~3–6%, grocery) швидко масштабуються і розмивають високу ставку напійного ENT other (~16%). SMB тримає ~22%, MM ~18%. Абсолютна комісія при цьому росте: Q4ʼ26 <b>{q4o_comm}</b> (Opt) vs {q4p_comm} (Pess).</p></div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Головне про комісію</h3><p>Блендована ставка падає з <b>~14.5% (січ) до ~9% (Q4 прогноз)</b> — TOP Brands (VARUS/LOKO/ATB/Fora ~3–6%, grocery) швидко масштабуються і розмивають високу ставку напійного ENT other (~16%). SMB тримає ~22%, MM ~18% (від GMV; від AOV відповідно вище: Total ~13% зараз, TOP ~5.5%, ENT other ~17%, SMB ~27%). Абсолютна комісія при цьому росте: Q4ʼ26 <b>{q4o_comm}</b> (Opt) vs {q4p_comm} (Pess).</p></div>
   <div class="two">
-    <div class="chartcard"><h3>Commission %GMV — по групах</h3><p class="cap">Jan26–Marʼ27 · actual→forecast (Optimistic)</p><canvas id="commGrpPct" height="220"></canvas></div>
-    <div class="chartcard"><h3>Commission € — по групах (stacked)</h3><p class="cap">Optimistic · Jan26–Marʼ27</p><canvas id="commGrpEur" height="220"></canvas></div>
+    <div class="chartcard"><h3>Commission %GMV — по групах</h3><p class="cap">Комісія від GMV. Jan26–Marʼ27 · actual→forecast (Optimistic)</p><canvas id="commGrpPct" height="220"></canvas></div>
+    <div class="chartcard"><h3>Commission %AOV — по групах</h3><p class="cap">Комісія від AOV (ціни мерчанта, без eater fees). Jan26–Marʼ27 (Optimistic)</p><canvas id="commGrpAov" height="220"></canvas></div>
   </div>
+  <div class="chartcard"><h3>Commission € — по групах (stacked)</h3><p class="cap">Optimistic · Jan26–Marʼ27</p><canvas id="commGrpEur" height="200"></canvas></div>
   <div class="chartcard"><h3>AOV — по групах (€)</h3><p class="cap">Total / TOP Brands / ENT other</p><canvas id="commAov" height="150"></canvas></div>
   <h3 style="margin:22px 0 4px">Commission %GMV, AOV, € — помісячно (Jan26–Marʼ27, Optimistic)</h3>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Метрика</th>{comm_month_headers}</tr></thead><tbody>{comm_grp_rows}</tbody></table></div>
@@ -587,6 +591,7 @@ const grpColor={{TOTAL:'#13203a',TOP:'#2563eb',ENT_OTH:'#0e7faa',SMB:'#15a34a',M
 const glbl=COMM.grp_label;
 const gord=['TOTAL','TOP','ENT_OTH','SMB','MM'];
 new Chart(document.getElementById('commGrpPct'),{{type:'line',data:{{labels:cml,datasets:gord.map(g=>({{label:glbl[g],data:COMM.opt[g].map(r=>r.comm_pct),borderColor:grpColor[g],backgroundColor:grpColor[g],tension:.3,borderWidth:g=='TOTAL'?2.5:1.5,spanGaps:true}}))}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>v+'%'}}}}}}}}}});
+new Chart(document.getElementById('commGrpAov'),{{type:'line',data:{{labels:cml,datasets:gord.map(g=>({{label:glbl[g],data:COMM.opt[g].map(r=>r.comm_aov),borderColor:grpColor[g],backgroundColor:grpColor[g],tension:.3,borderWidth:g=='TOTAL'?2.5:1.5,spanGaps:true}}))}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>v+'%'}}}}}}}}}});
 new Chart(document.getElementById('commGrpEur'),{{type:'bar',data:{{labels:cml,datasets:['TOP','ENT_OTH','SMB','MM'].map(g=>({{label:glbl[g],data:COMM.opt[g].map(r=>r.comm),backgroundColor:grpColor[g]}}))}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{x:{{stacked:true}},y:{{stacked:true,ticks:{{callback:eurTick}}}}}}}}}});
 new Chart(document.getElementById('commAov'),{{type:'line',data:{{labels:cml,datasets:[
   {{label:'Total',data:COMM.opt.TOTAL.map(r=>r.aov),borderColor:'#d1493f',backgroundColor:'#d1493f',tension:.3}},
