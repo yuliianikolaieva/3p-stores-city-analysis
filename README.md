@@ -10,7 +10,7 @@
 - KPI: GMV, Contribution Profit, CP margin, замовлення, кількість партнерів/міст.
 - Growth & profitability по сегментах (GMV і CP по місяцях, Jan–Aug 2026).
 - City ranking — фінанс і опс (GMV, частка, MoM, CP, CP margin, AOV, failed/late rate).
-- **Commission tab** — рівень комісії %GMV + AOV (Jan–Aug), розріз ENT/SMB, топ-партнери, а також цільові метрики: Commission of New merchants (Top Brands) та (Other ENT) + калькулятор квартальних цілей.
+- **Commission tab** — commission %GMV + AOV + € помісячно (Jan26→Marʼ27) по групах Total / TOP Brands / ENT other / SMB / MM; прогноз Q4ʼ26 (Optimistic vs Pessimistic) на базі файлу FC Stores Forecast; партнери за комісією; TOP Brands факт→прогноз (VARUS, LOKO, Rukavichka, ATB, Fora, Auchan, Біле та Сухе).
 - City deep-dive — спліт по сегментах і топ-партнери для топ-15 міст.
 - Partner leaderboard (top-22 by GMV) + Movers (хто зростає / падає).
 

@@ -288,50 +288,55 @@ for d in DIAG:
 
 SIM = json.loads((HERE / "sim_data.json").read_text(encoding="utf-8")) if (HERE / "sim_data.json").exists() else {}
 
-# ── Commission tab (Jan–Aug 2026) ───────────────────────────────────────────────
+# ── Commission tab (Jan 2026 – Mar 2027; source: FC Stores Forecast file) ────────
 COMM = json.loads((HERE / "commission_data.json").read_text(encoding="utf-8"))
-cmi = COMM["total"][-1]        # latest month (Aug)
-cmi_prev = COMM["total"][-2]   # Jul
-cm_first = COMM["total"][0]    # Jan
-# Segment monthly commission %GMV table (ENT / SMB; MM reclassified ≈0)
-def _pctcell(v):
-    return "<td>–</td>" if v is None else f"<td>{v:.1f}%</td>"
-
-
-comm_seg_rows = ""
-for seg in ["Enterprise", "SMB"]:
-    cells = "".join(_pctcell(r["comm_pct"]) for r in COMM["segment"][seg])
-    comm_seg_rows += f'<tr><td class="axis">{seg} · comm %GMV</td>{cells}</tr>'
-# total row
-tot_cells = "".join(f'<td>{r["comm_pct"]:.1f}%</td>' for r in COMM["total"])
-comm_seg_rows += f'<tr class="pos"><td class="axis">TOTAL · comm %GMV</td>{tot_cells}</tr>'
-aov_cells = "".join(f'<td>€{r["aov"]:.1f}</td>' for r in COMM["total"])
-comm_seg_rows += f'<tr><td class="axis">TOTAL · AOV</td>{aov_cells}</tr>'
-comm_month_headers = "".join(f"<th>{m}</th>" for m in COMM["months"])
-
-# Partner commission leaderboard (Aug)
-comm_partner_rows = ""
-for p in COMM["partners"]:
-    mom = p.get("mom")
-    comm_partner_rows += (
-        f'<tr><td class="axis">{p["brand"]}</td><td>{p["seg"]}</td>'
-        f'<td>{eur(p["comm"])}</td><td>{p["share"]:.1f}%</td><td>{p["comm_pct"]:.1f}%</td>'
-        f'<td>€{p["aov"]:.1f}</td><td>{delta_span(mom)}</td></tr>'
-    )
-
-# New-merchant top-brand detail (Aug)
-tb_rows = ""
-for d in sorted(COMM["aug_topbrand"], key=lambda x: -x["comm"]):
-    stat = "активний" if d["comm"] > 0 else "greenfield (0 нових)"
-    tone = "pos" if d["comm"] > 0 else "neg"
-    rate = f'{d["comm_pct"]:.1f}%' if d["gmv"] else "–"
-    aovs = f'€{d["aov"]:.1f}' if d.get("aov") else "–"
-    tb_rows += (
-        f'<tr class="{tone}"><td class="axis">{d["brand"]}</td><td>{eur(d["comm"])}</td>'
-        f'<td>{eur(d["gmv"])}</td><td>{d["providers"]}</td><td>{rate}</td><td>{aovs}</td>'
-        f'<td style="text-align:left">{stat}</td></tr>'
-    )
-tgt = COMM["targets"]
+CM_MONTHS = COMM["months"]; CM_PHASE = COMM["phase"]; GLBL = COMM["grp_label"]
+GRP_ORDER = ["TOTAL", "TOP", "ENT_OTH", "SMB", "MM"]
+top_brands_list = COMM["top_brands_list"]
+def _col(scn, grp, key): return [x[key] for x in COMM[scn][grp]]
+_actual_idx = max(i for i, m in enumerate(CM_MONTHS) if CM_PHASE[m] == "Actual")
+cm_jul = COMM["opt"]["TOTAL"][_actual_idx]
+cm_jan = COMM["opt"]["TOTAL"][0]
+q4o = COMM["q4_opt"]; q4p = COMM["q4_pess"]
+cm_jul_pct = f'{cm_jul["comm_pct"]:.1f}%'; cm_jan_pct = f'{cm_jan["comm_pct"]:.1f}%'
+cm_jul_aov = f'{cm_jul["aov"]:.2f}'
+q4o_comm = eur(q4o["TOTAL"]["comm"]); q4o_pct = f'{q4o["TOTAL"]["comm_pct"]:.1f}%'
+q4o_aov = f'{q4o["TOTAL"]["aov"]:.2f}'; q4p_comm = eur(q4p["TOTAL"]["comm"])
+comm_month_headers = "".join(f"<th>{m}</th>" for m in CM_MONTHS)
+def _pct_cell(v): return "<td>-</td>" if v is None else f"<td>{v:.1f}%</td>"
+def _pct_row(grp, cls=""):
+    cells = "".join(_pct_cell(v) for v in _col("opt", grp, "comm_pct"))
+    return f'<tr class="{cls}"><td class="axis">{GLBL[grp]} · %GMV</td>{cells}</tr>'
+comm_grp_rows = "".join(_pct_row(g, "pos" if g == "TOTAL" else "") for g in GRP_ORDER)
+_aov_cells = "".join(("<td>-</td>" if v is None else f"<td>€{v:.1f}</td>") for v in _col("opt", "TOTAL", "aov"))
+_eur_cells = "".join(f"<td>{eur(v)}</td>" for v in _col("opt", "TOTAL", "comm"))
+comm_grp_rows += f'<tr><td class="axis">Total · AOV</td>{_aov_cells}</tr>'
+comm_grp_rows += f'<tr><td class="axis">Total · commission €</td>{_eur_cells}</tr>'
+def _q4_row(grp):
+    o = q4o[grp]; pp = q4p[grp]
+    op = "-" if o["comm_pct"] is None else f'{o["comm_pct"]:.1f}%'
+    pc = "-" if pp["comm_pct"] is None else f'{pp["comm_pct"]:.1f}%'
+    oa = "-" if o["aov"] is None else f'€{o["aov"]:.1f}'
+    cls = "pos" if grp == "TOTAL" else ""
+    return (f'<tr class="{cls}"><td class="axis">{GLBL[grp]}</td>'
+            f'<td>{eur(o["comm"])}</td><td>{op}</td><td>{oa}</td><td>{eur(o["gmv"])}</td>'
+            f'<td>{eur(pp["comm"])}</td><td>{pc}</td></tr>')
+q4_rows = "".join(_q4_row(g) for g in GRP_ORDER)
+def _tbq_row(d):
+    jp = "-" if d["jul_pct"] is None else f'{d["jul_pct"]:.1f}%'
+    qp = "-" if d["q4_pct"] is None else f'{d["q4_pct"]:.1f}%'
+    jc = eur(d["jul_comm"]) if d["jul_comm"] else "-"
+    status = "" if d["jul_comm"] else "новий у прогнозі"
+    cls = "" if d["jul_comm"] else "pos"
+    return (f'<tr class="{cls}"><td class="axis">{d["brand"]}</td><td>{jc}</td><td>{jp}</td>'
+            f'<td>{eur(d["q4_comm"])}</td><td>{qp}</td><td>{d["q4_locs"]}</td>'
+            f'<td style="text-align:left">{status}</td></tr>')
+comm_tbq_rows = "".join(_tbq_row(d) for d in COMM["top_brand_q4"])
+def _p_row(rec):
+    a = "-" if rec["aov"] is None else f'€{rec["aov"]:.1f}'
+    return (f'<tr><td class="axis">{rec["brand"]}</td><td>{rec["seg"]}</td>'
+            f'<td>{eur(rec["comm"])}</td><td>{rec["comm_pct"]:.1f}%</td><td>{a}</td></tr>')
+comm_oth_rows = "".join(_p_row(r) for r in COMM["partners_ent_oth"])
 
 # ── Chart data ──────────────────────────────────────────────────────────────────
 months = DATA["meta"]["months"]
@@ -446,48 +451,35 @@ HTML = f"""<!DOCTYPE html>
   </div>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Segment</th><th>GMV ({CURLBL})</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>Eater fee/ord</th><th>EF %GMV</th><th>CPO</th><th>Camp Bolt %GMV</th><th>Camp ord%</th><th>Partners</th></tr></thead><tbody>{seg_rows}</tbody></table></div>
 
-  <h2 class="section" id="commission"><span class="bar"></span>Commission — рівень, тренд, партнери та нові мерчанти</h2>
-  <p class="section-desc">Період: <b>січень–серпень 2026</b> (місячно), останній повний місяць — серпень. Total commission from GMV, AOV + розріз ENT / SMB / MM. Джерело: dbx <code>main.ng_delivery.fact_provider_monthly</code>.</p>
+  <h2 class="section" id="commission"><span class="bar"></span>Commission — рівень, тренд, партнери та прогноз Q4</h2>
+  <p class="section-desc">Джерело: <b>FC Stores Forecast (Oct26–Mar27)</b> — actual Jan–Jul (dbx), projection Aug–Sep, forecast Oct26–Marʼ27 (Optimistic). Групи: <b>TOP Brands</b> ({top_brands_list}), <b>ENT other</b> (решта Enterprise), <b>SMB</b>, <b>MM</b>.</p>
   <div class="grid kpis">
-    <div class="kpi base"><div class="n">{eur(cmi['comm'])}</div><div class="l">Total commission (Aug)</div></div>
-    <div class="kpi"><div class="n">{cmi['comm_pct']:.1f}%</div><div class="l">Commission %GMV (Jan {cm_first['comm_pct']:.1f}% → Aug)</div></div>
-    <div class="kpi"><div class="n">€{cmi['aov']:.1f}</div><div class="l">AOV (Aug) · Jan €{cm_first['aov']:.1f}</div></div>
-    <div class="kpi opt"><div class="n">{eur(tgt['new_top']['aug'] + tgt['new_other_ent']['aug'])}</div><div class="l">Commission нових мерчантів (Aug)</div></div>
-    <div class="kpi"><div class="n">{cmi['orders']/1000:.1f}k</div><div class="l">Orders (Aug)</div></div>
+    <div class="kpi"><div class="n">{cm_jul_pct}</div><div class="l">Commission %GMV (Jul, факт) · Jan {cm_jan_pct}</div></div>
+    <div class="kpi"><div class="n">€{cm_jul_aov}</div><div class="l">AOV (Jul, факт)</div></div>
+    <div class="kpi base"><div class="n">{q4o_comm}</div><div class="l">Q4ʼ26 commission (Opt)</div></div>
+    <div class="kpi"><div class="n">{q4o_pct}</div><div class="l">Q4ʼ26 commission %GMV</div></div>
+    <div class="kpi"><div class="n">€{q4o_aov}</div><div class="l">Q4ʼ26 AOV (Opt)</div></div>
   </div>
-  <div class="callout" style="border-left-color:var(--warn)"><h3>Головне про рівень комісії</h3><p>Блендована ставка <b>падає з 14.6% (січ) до 11.1% (сер)</b> — не через зниження ставок, а через <b>міксшифт</b>: низькокомісійний grocery (VARUS 5.7%, LOKO 3.2%, KOPIYKA 7.5%) росте швидше за високомаржинальний напійний ритейл (REMESLO 28.5%, BEERLAND 23%, HOP HEY 19%). SMB тримає ~23% comm%GMV, Enterprise ~9–10%. Mid-market у 2026 фактично реклесифіковано в ENT/SMB (≈0).</p></div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Головне про комісію</h3><p>Блендована ставка падає з <b>~14.5% (січ) до ~9% (Q4 прогноз)</b> — TOP Brands (VARUS/LOKO/ATB/Fora ~3–6%, grocery) швидко масштабуються і розмивають високу ставку напійного ENT other (~16%). SMB тримає ~22%, MM ~18%. Абсолютна комісія при цьому росте: Q4ʼ26 <b>{q4o_comm}</b> (Opt) vs {q4p_comm} (Pess).</p></div>
   <div class="two">
-    <div class="chartcard"><h3>Commission %GMV — тренд по сегментах</h3><p class="cap">Total / Enterprise / SMB · Jan–Aug 2026</p><canvas id="commPctChart" height="210"></canvas></div>
-    <div class="chartcard"><h3>Commission (€) &amp; AOV — total</h3><p class="cap">Стовпці — commission €, лінія — AOV €</p><canvas id="commEurChart" height="210"></canvas></div>
+    <div class="chartcard"><h3>Commission %GMV — по групах</h3><p class="cap">Jan26–Marʼ27 · actual→forecast (Optimistic)</p><canvas id="commGrpPct" height="220"></canvas></div>
+    <div class="chartcard"><h3>Commission € — по групах (stacked)</h3><p class="cap">Optimistic · Jan26–Marʼ27</p><canvas id="commGrpEur" height="220"></canvas></div>
   </div>
-  <h3 style="margin:22px 0 4px">Commission %GMV &amp; AOV — помісячно</h3>
-  <div class="tablewrap"><table class="matrix"><thead><tr><th>Метрика</th>{comm_month_headers}</tr></thead><tbody>{comm_seg_rows}</tbody></table></div>
+  <div class="chartcard"><h3>AOV — по групах (€)</h3><p class="cap">Total / TOP Brands / ENT other</p><canvas id="commAov" height="150"></canvas></div>
+  <h3 style="margin:22px 0 4px">Commission %GMV, AOV, € — помісячно (Jan26–Marʼ27, Optimistic)</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Метрика</th>{comm_month_headers}</tr></thead><tbody>{comm_grp_rows}</tbody></table></div>
+  <p class="cap">Actual: Jan–Jul · Projection: Aug–Sep · Forecast: Oct26–Marʼ27.</p>
 
-  <h3 style="margin:22px 0 4px">Які партнери формують комісію (Aug 2026)</h3>
-  <p class="section-desc">Топ-15 за абсолютною комісією. VARUS — №1 за обсягом (18% усієї комісії), але низька ставка 5.7%; напійні бренди дають високий %GMV.</p>
-  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Commission</th><th>Share</th><th>Comm %GMV</th><th>AOV</th><th>MoM</th></tr></thead><tbody>{comm_partner_rows}</tbody></table></div>
+  <h3 style="margin:24px 0 4px">Прогноз Q4ʼ26 (Oct–Dec) по групах — Optimistic vs Pessimistic</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Група</th><th>Comm € (Opt)</th><th>%GMV</th><th>AOV</th><th>GMV (Opt)</th><th>Comm € (Pess)</th><th>%GMV (Pess)</th></tr></thead><tbody>{q4_rows}</tbody></table></div>
 
-  <h3 style="margin:26px 0 4px">Нові мерчанти — цільові метрики (для квартальних цілей)</h3>
-  <p class="section-desc">«Новий мерчант» = провайдер із першим доставленим замовленням у 2026 (first_delivered_order_ts ≥ 2026-01-01). Дві цільові метрики: <b>Commission of New merchants (Top Brands)</b> = LOKO, VARUS, RUKAVYCHKA, ATB, FORA, AUCHAN, Біле та Сухе; <b>Commission of New merchants (Other ENT)</b> = решта нових Enterprise.</p>
-  <div class="grid kpis" style="grid-template-columns:repeat(4,1fr)">
-    <div class="kpi opt"><div class="n">{eur(tgt['new_top']['aug'])}</div><div class="l">New · Top Brands — Aug/міс</div></div>
-    <div class="kpi"><div class="n">{eur(tgt['new_top']['cum'])}</div><div class="l">New · Top Brands — Jan–Aug сума</div></div>
-    <div class="kpi opt"><div class="n">{eur(tgt['new_other_ent']['aug'])}</div><div class="l">New · Other ENT — Aug/міс</div></div>
-    <div class="kpi"><div class="n">{eur(tgt['new_other_ent']['cum'])}</div><div class="l">New · Other ENT — Jan–Aug сума</div></div>
-  </div>
-  <div class="chartcard"><h3>Commission нових мерчантів — помісячно (stacked)</h3><p class="cap">New · Top Brands / New · Other ENT / New · MM&amp;SMB · Jan–Aug 2026</p><canvas id="bucketChart" height="150"></canvas></div>
-  <h3 style="margin:22px 0 4px">Нові мерчанти по Top Brands (Aug)</h3>
-  <div class="tablewrap"><table class="matrix"><thead><tr><th>Top Brand</th><th>Commission</th><th>GMV</th><th>New providers</th><th>Comm %GMV</th><th>AOV</th><th>Статус</th></tr></thead><tbody>{tb_rows}</tbody></table></div>
-  <div class="callout" style="border-left-color:var(--accent)"><h3>Що це означає для цілей</h3><p><b>Активні зараз:</b> VARUS (56 нових, €13.3k/міс, ставка 5.7%) і LOKO (118 нових, €2.5k/міс, ставка 3.2% — own-delivery) дають майже всю «New · Top Brands» комісію. <b>Greenfield:</b> ATB (845 провайдерів у базі) та FORA (278) присутні, але <b>0 нових активних у 2026</b> — величезний потенціал онбордингу/активації. <b>AUCHAN та «Біле та Сухе» ще відсутні</b> в UA 3P Stores — це нові логотипи для залучення. Low commission grocery (VARUS/LOKO) варто балансувати вищою ставкою або eater fees.</p></div>
-  <div class="chartcard">
-    <h3>Калькулятор цілей на квартал</h3>
-    <p class="cap">Встав місячний таргет по кожній метриці — покаже приріст vs серпень і квартальну суму (×3).</p>
-    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;margin:6px 0">
-      <label style="font-size:14px">New · Top Brands, €/міс<br><input type="number" id="tgtTop" value="{tgt['new_top']['aug']}" step="1000" style="width:160px;padding:6px;border:1px solid var(--line);border-radius:8px"></label>
-      <label style="font-size:14px">New · Other ENT, €/міс<br><input type="number" id="tgtOther" value="{tgt['new_other_ent']['aug']}" step="1000" style="width:160px;padding:6px;border:1px solid var(--line);border-radius:8px"></label>
-    </div>
-    <table class="matrix"><thead><tr><th>Метрика</th><th>Aug (факт)</th><th>Ваш таргет/міс</th><th>Приріст vs Aug</th><th>Квартал (×3)</th></tr></thead><tbody id="tgtBody"></tbody></table>
-  </div>
+  <h3 style="margin:24px 0 4px">TOP Brands — факт (Jul) → прогноз Q4ʼ26</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Brand</th><th>Comm Jul</th><th>%GMV Jul</th><th>Comm Q4ʼ26</th><th>%GMV Q4</th><th>Locations Q4</th><th>Статус</th></tr></thead><tbody>{comm_tbq_rows}</tbody></table></div>
+  <div class="callout" style="border-left-color:var(--accent)"><h3>TOP Brands у Q4 — драйвери</h3><p>Головний приріст комісії дають <b>ATB</b> (650 локацій, ~€24k, 4%), <b>Fora</b> (250, ~€22k, 6%) та <b>Rukavichka</b> (76, ~€13k, 6.8% — з майже нуля). <b>VARUS</b> лишається №1 (~€38k), але ставка низька 5.5%. Нові логотипи: <b>Auchan</b> (~€7k, 9%) і <b>Біле та Сухе</b> (~€5k, 15%). Разом TOP Brands у Q4 ≈ €117k комісії при ставці ~5.3%.</p></div>
+
+  <h3 style="margin:24px 0 4px">ENT other — партнери за комісією (Jul, факт)</h3>
+  <p class="section-desc">Напійний/спеціалізований Enterprise-рітейл (без TOP Brands) — високий %GMV. Топ-15.</p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Commission</th><th>%GMV</th><th>AOV</th></tr></thead><tbody>{comm_oth_rows}</tbody></table></div>
 
   <h2 class="section" id="cities"><span class="bar"></span>City ranking — фінанс &amp; опс</h2>
   <p class="section-desc">Топ-5 міст (Kyiv, Dnipro, Lviv, Odesa, Kharkiv) = ~73% GMV; Kyiv сам ~35%. Зелений рядок — CP margin ≥ 5%, червоний — збиткове місто.</p>
@@ -591,38 +583,15 @@ renderSim();
 // ── Commission tab ──
 const COMM={json.dumps(COMM, ensure_ascii=False)};
 const cml=COMM.months;
-new Chart(document.getElementById('commPctChart'),{{type:'line',data:{{labels:cml,datasets:[
-  {{label:'Total',data:COMM.total.map(r=>r.comm_pct),borderColor:'#13203a',backgroundColor:'#13203a',tension:.3,borderWidth:2}},
-  {{label:'Enterprise',data:COMM.segment.Enterprise.map(r=>r.comm_pct),borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3}},
-  {{label:'SMB',data:COMM.segment.SMB.map(r=>r.comm_pct),borderColor:'#15a34a',backgroundColor:'#15a34a',tension:.3}}]}},
-  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>v+'%'}}}}}}}}}});
-new Chart(document.getElementById('commEurChart'),{{data:{{labels:cml,datasets:[
-  {{type:'bar',label:'Commission €',data:COMM.total.map(r=>r.comm),backgroundColor:'#2563eb',yAxisID:'y'}},
-  {{type:'line',label:'AOV €',data:COMM.total.map(r=>r.aov),borderColor:'#d1493f',backgroundColor:'#d1493f',tension:.3,yAxisID:'y1'}}]}},
-  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{
-    y:{{position:'left',ticks:{{callback:eurTick}}}},
-    y1:{{position:'right',grid:{{drawOnChartArea:false}},ticks:{{callback:v=>'€'+v}}}}}}}}}});
-new Chart(document.getElementById('bucketChart'),{{type:'bar',data:{{labels:cml,datasets:[
-  {{label:'New · Top Brands',data:COMM.buckets.map(r=>r.new_top),backgroundColor:'#2563eb'}},
-  {{label:'New · Other ENT',data:COMM.buckets.map(r=>r.new_other_ent),backgroundColor:'#0e7faa'}},
-  {{label:'New · MM&SMB',data:COMM.buckets.map(r=>r.new_mm_smb),backgroundColor:'#15a34a'}}]}},
-  options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{x:{{stacked:true}},y:{{stacked:true,ticks:{{callback:eurTick}}}}}}}}}});
-// target calculator
-const augTop=COMM.targets.new_top.aug, augOther=COMM.targets.new_other_ent.aug;
-function renderTgt(){{
-  const t=parseFloat(document.getElementById('tgtTop').value)||0;
-  const o=parseFloat(document.getElementById('tgtOther').value)||0;
-  const row=(name,aug,val)=>{{
-    const up=aug?((val/aug-1)*100):0; const cls=val>=aug?'up':'down';
-    return `<tr><td class="axis">${{name}}</td><td>${{fmtE(aug)}}</td><td>${{fmtE(val)}}</td>`
-      +`<td><span class="${{cls}}">${{(up>0?'+':'')+up.toFixed(0)}}%</span></td><td>${{fmtE(val*3)}}</td></tr>`;
-  }};
-  document.getElementById('tgtBody').innerHTML=row('New · Top Brands',augTop,t)+row('New · Other ENT',augOther,o)
-    +`<tr class="pos"><td class="axis">Разом нові</td><td>${{fmtE(augTop+augOther)}}</td><td>${{fmtE(t+o)}}</td><td></td><td>${{fmtE((t+o)*3)}}</td></tr>`;
-}}
-document.getElementById('tgtTop').addEventListener('input',renderTgt);
-document.getElementById('tgtOther').addEventListener('input',renderTgt);
-renderTgt();
+const grpColor={{TOTAL:'#13203a',TOP:'#2563eb',ENT_OTH:'#0e7faa',SMB:'#15a34a',MM:'#d1a53f'}};
+const glbl=COMM.grp_label;
+const gord=['TOTAL','TOP','ENT_OTH','SMB','MM'];
+new Chart(document.getElementById('commGrpPct'),{{type:'line',data:{{labels:cml,datasets:gord.map(g=>({{label:glbl[g],data:COMM.opt[g].map(r=>r.comm_pct),borderColor:grpColor[g],backgroundColor:grpColor[g],tension:.3,borderWidth:g=='TOTAL'?2.5:1.5,spanGaps:true}}))}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>v+'%'}}}}}}}}}});
+new Chart(document.getElementById('commGrpEur'),{{type:'bar',data:{{labels:cml,datasets:['TOP','ENT_OTH','SMB','MM'].map(g=>({{label:glbl[g],data:COMM.opt[g].map(r=>r.comm),backgroundColor:grpColor[g]}}))}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{x:{{stacked:true}},y:{{stacked:true,ticks:{{callback:eurTick}}}}}}}}}});
+new Chart(document.getElementById('commAov'),{{type:'line',data:{{labels:cml,datasets:[
+  {{label:'Total',data:COMM.opt.TOTAL.map(r=>r.aov),borderColor:'#d1493f',backgroundColor:'#d1493f',tension:.3}},
+  {{label:'TOP Brands',data:COMM.opt.TOP.map(r=>r.aov),borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3}},
+  {{label:'ENT other',data:COMM.opt.ENT_OTH.map(r=>r.aov),borderColor:'#0e7faa',backgroundColor:'#0e7faa',tension:.3}}]}},options:{{plugins:{{legend:{{position:'bottom'}}}},scales:{{y:{{ticks:{{callback:v=>'€'+v}}}}}}}}}});
 </script>
 </body>
 </html>
