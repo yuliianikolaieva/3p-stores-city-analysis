@@ -1,0 +1,52 @@
+name: Weekly report update
+
+# Runs every Monday at 07:00 UTC = 10:00 Kyiv (EEST, summer).
+# In winter (EET) Kyiv is UTC+2, so it lands at 09:00 local — GitHub cron has no timezone.
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install --quiet databricks-sql-connector pandas openpyxl
+
+      - name: Refresh data from Databricks
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: python3 refresh_data.py
+
+      - name: Rebuild index.html
+        run: python3 generate_report.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html threep_data.json sim_data.json diag_data.json commission_actuals.json
+          if git diff --cached --quiet; then
+            echo "No changes — report already up to date."
+          else
+            git commit -m "Weekly auto-update: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push origin HEAD:main
+          fi

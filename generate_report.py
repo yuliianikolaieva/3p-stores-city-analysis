@@ -199,31 +199,18 @@ def mover_rows(arr):
         for b in arr
     )
 
-# ── Profitability diagnosis (July 2026, per-order P&L for 7 focus brands) ────────
-# Значення з dbx fact_provider_monthly (per delivered order, липень 2026).
-DIAG = [
-    {"brand": "VARUS", "aov": 16.06, "own": 0, "comm_pct": 5.7, "comm": 0.92, "ef": 1.91, "cpo": 2.38,
-     "inc": 1.14, "refund": 0.31, "camp": 0.67, "camp_ord": 84, "cpo_ord": -0.50, "margin": -3.1,
-     "why": "Покращення до -3.1% (з -8.3% у червні). Головне зараз - CPO €2.38 (зросла) + надважке промо (84% замовлень, incentives €1.14/зам). Комісія 5.7%, refunds під контролем (€0.31)."},
-    {"brand": "LOKO", "aov": 14.71, "own": 100, "comm_pct": 3.2, "comm": 0.46, "ef": 0.00, "cpo": 0.00,
-     "inc": 0.70, "refund": -0.03, "camp": 0.70, "camp_ord": 10, "cpo_ord": -0.26, "margin": -1.8,
-     "why": "Власна доставка (CPO=0), майже беззбитково (-1.8%). Комісія 3.2% (€0.46/зам) низька, а Bolt-промо зросло (incentives €0.70/зам). Важелі - комісія + контроль промо."},
-    {"brand": "KOPIYKA", "aov": 12.14, "own": 2, "comm_pct": 7.5, "comm": 0.91, "ef": 1.50, "cpo": 1.87,
-     "inc": 1.10, "refund": 0.30, "camp": 0.73, "camp_ord": 83, "cpo_ord": -0.24, "margin": -2.0,
-     "why": "Майже беззбитково (-2.0%). Тисне надважке промо (83% замовлень, incentives €1.10 + campaign €0.73/зам) + CPO €1.87 при низькому AOV €12.1."},
-    {"brand": "RUKAVYCHKA", "aov": 13.70, "own": 10, "comm_pct": 6.2, "comm": 0.85, "ef": 1.76, "cpo": 2.26,
-     "inc": 1.40, "refund": 0.54, "camp": 0.89, "camp_ord": 16, "cpo_ord": -0.42, "margin": -3.0,
-     "why": "CPO €2.26 + високі incentives €1.40/зам - головні драйвери; комісія 6.2%. Промо за к-стю замовлень низьке (16%), але дороге per-order."},
-    {"brand": "KOPIYKA MINI", "aov": 12.24, "own": 1, "comm_pct": 7.1, "comm": 0.87, "ef": 1.60, "cpo": 2.16,
-     "inc": 1.37, "refund": -0.28, "camp": 0.81, "camp_ord": 81, "cpo_ord": -0.00, "margin": -0.0,
-     "why": "Вийшла в ~нуль (0.0%) завдяки refund-кредиту. Структурно тримається надважким промо (81% замовлень) + CPO €2.16 при AOV €12.2. Миколаїв CPO €3.5, -11.9%."},
-    {"brand": "TAISTRA", "aov": 13.29, "own": 3, "comm_pct": 8.7, "comm": 1.15, "ef": 1.31, "cpo": 1.81,
-     "inc": 0.84, "refund": -0.20, "camp": 0.33, "camp_ord": 11, "cpo_ord": 0.08, "margin": 0.6,
-     "why": "Уже прибуткова (+0.6%!). Добра комісія (8.7%), низьке промо (11% замовлень), refunds ~0, нижча CPO €1.81. Модель для масштабування."},
-    {"brand": "SANTIM", "aov": 15.44, "own": 2, "comm_pct": 8.2, "comm": 1.26, "ef": 1.80, "cpo": 2.06,
-     "inc": 1.21, "refund": 1.25, "camp": 0.93, "camp_ord": 82, "cpo_ord": -0.16, "margin": -1.0,
-     "why": "Відновлення до -1.0% (з -7.2% у липні - сплеск refunds минув). Тисне надважке промо (82% замовлень, incentives €1.21 + campaign €0.93). Комісія висока (8.2%)."},
-]
+# ── Profitability diagnosis (auto-refreshed from diag_data.json) ─────────────────
+_DG = json.loads((HERE / "diag_data.json").read_text(encoding="utf-8"))
+DIAG = _DG["DIAG"]; DIAG_MONTH = _DG["month_label"]; CITYWORST = _DG["CITYWORST"]
+UAMON = {"Jan": "січень", "Feb": "лютий", "Mar": "березень", "Apr": "квітень", "May": "травень",
+         "Jun": "червень", "Jul": "липень", "Aug": "серпень", "Sep": "вересень", "Oct": "жовтень",
+         "Nov": "листопад", "Dec": "грудень"}
+DIAG_MONTH_UA = UAMON.get(DIAG_MONTH, DIAG_MONTH)
+_prof = [d["brand"] for d in DIAG if d["margin"] >= 0]
+_loss = sorted(DIAG, key=lambda d: d["margin"])
+diag_summary = (f"У {DIAG_MONTH_UA}: прибуткові — {', '.join(_prof) if _prof else 'немає'}; "
+                f"найглибший мінус — {_loss[0]['brand']} ({_loss[0]['margin']:.1f}%). "
+                f"Головні важелі: промо (частка замовлень з кампанією), CPO і комісія.")
 diag_rows = ""
 for d in DIAG:
     diag_rows += (
@@ -233,52 +220,15 @@ for d in DIAG:
         f'<td>€{d["refund"]:.2f}</td><td>€{d["camp"]:.2f}</td><td>{d["camp_ord"]}%</td>'
         f'<td><span class="down">€{d["cpo_ord"]:.2f}</span></td><td><span class="down">{d["margin"]:.1f}%</span></td></tr>'
     )
-
-# Де найбільший мінус CP (місто з найбільшим тягарем CP у липні 2026)
-CITYWORST = [
-    ("VARUS", "Dnipro", 4033, -2667, -4.3, 2.18, 87, 0.34, "Далі Zaporizhia (-€1.2k, -9.2%, CPO €2.89). Промо 87% - головний важіль."),
-    ("LOKO", "Kyiv", 2000, -534, -1.8, 0.0, 7, -0.02, "Збиток рівномірний (~-2% скрізь) - системна проблема комісії 3.2%."),
-    ("KOPIYKA", "Odesa", 2054, -484, -1.9, 1.86, 83, 0.30, "Майже весь обсяг в Одесі; промо 83%."),
-    ("RUKAVYCHKA", "Lviv", 742, -285, -2.8, 2.25, 16, 0.50, "Практично лише Львів. Ivano-Frankivsk - CPO €3.7, деприоритезувати."),
-    ("SANTIM", "Odesa", 454, -74, -1.0, 2.06, 82, 1.25, "Єдине місто. Refunds повернулись до норми vs липневий сплеск."),
-    ("KOPIYKA MINI", "Mykolaiv", 62, -92, -11.9, 3.48, 82, 0.42, "Odesa вже +1.9%. Миколаїв - CPO €3.5, пауза/own-delivery."),
-    ("TAISTRA", "Ternopil", 38, -11, -2.2, 1.72, 66, 0.01, "Бренд загалом у плюсі; Хмельницький +0.9%."),
-]
 cityworst_rows = "".join(
     f'<tr class="neg"><td class="axis">{b}</td><td>{c}</td><td>{o:,}</td>'
     f'<td><span class="down">{eur(cp)}</span></td><td><span class="down">{m:.1f}%</span></td>'
     f'<td>€{cpo:.2f}</td><td>{cs}%</td><td>€{rf:.2f}</td><td style="text-align:left;font-size:12px">{note}</td></tr>'
     for (b, c, o, cp, m, cpo, cs, rf, note) in CITYWORST
 )
-
-RECO = {
-    "VARUS": ["Промо: 84% замовлень з кампанією (incentives €1.14/зам) — головний важіль. Зрізати глибину/охоплення, partner cost-share, таргет ELC/churn.",
-              "Комісія 5.7% → 8–10% (партнер №1 за GMV, +49% MoM — є переговорна сила).",
-              "CPO €2.38 (зросла): батчинг у Дніпрі та Запоріжжі (CPO €2.9), MOV↑, звузити зони.",
-              "Першими бити: Dnipro (−€2.7k) та Zaporizhia (−9.2%). Refunds уже під контролем (€0.31)."],
-    "LOKO": ["Комісія 3.2% → 6–8% — головний важіль (own-delivery, Bolt не несе курʼєрки).",
-             "Промо зросло (incentives €0.70/зам при лише 10% замовлень) — переглянути ефективність.",
-             "Майже беззбитково (−1.8%) — невеликий крок по комісії виводить у плюс.",
-             "Own-delivery → eater fees=0: розглянути service fee як додатковий дохід."],
-    "KOPIYKA": ["Промо — головний важіль: 83% замовлень, incentives €1.10 + campaign €0.73/зам. Partner cost-share + таргет.",
-                "AOV €12.1 (низький): MOV↑, бандли — розмити CPO €1.87.",
-                "Фокус — Одеса (весь обсяг тут)."],
-    "RUKAVYCHKA": ["CPO €2.26 + incentives €1.40/зам — головні драйвери: батчинг + перегляд промо-глибини у Львові.",
-                   "Комісія 6.2% → 8%.",
-                   "Деприоритезувати дрібні міста з CPO €3+ (Ivano-Frankivsk €3.7)."],
-    "KOPIYKA MINI": ["Уже в ~нулі — закріпити: зрізати надважке промо (81% замовлень) + MOV↑ (AOV €12.2).",
-                     "Mykolaiv (CPO €3.5, −11.9%) — пауза або лише own-delivery.",
-                     "Комісія 7.1% → 8%."],
-    "TAISTRA": ["Уже прибуткова (+0.6%) — еталон: низьке промо (11%), добра комісія (8.7%), refunds ~0, CPO €1.81.",
-                "Масштабувати цю модель на інші бренди/міста.",
-                "Тримати промо-дисципліну."],
-    "SANTIM": ["Промо — головний важіль: 82% замовлень, incentives €1.21 + campaign €0.93/зам. Partner cost-share.",
-               "Refunds повернулись до норми (€1.25 з €3.15) — тримати контроль.",
-               "Комісія висока (8.2%) — проблема не в ній; фокус на промо + CPO €2.06."],
-}
 reco_cards = ""
 for d in DIAG:
-    lis = "".join(f"<li>{x}</li>" for x in RECO[d["brand"]])
+    lis = "".join(f"<li>{x}</li>" for x in d["reco"])
     reco_cards += (
         f'<div class="callout" style="border-left-color:var(--accent)">'
         f'<h3>{d["brand"]} · CP {d["margin"]:.1f}%</h3>'
@@ -288,40 +238,49 @@ for d in DIAG:
 
 SIM = json.loads((HERE / "sim_data.json").read_text(encoding="utf-8")) if (HERE / "sim_data.json").exists() else {}
 
-# ── Commission tab (Jan 2026 – Mar 2027; source: FC Stores Forecast file) ────────
-COMM = json.loads((HERE / "commission_data.json").read_text(encoding="utf-8"))
-CM_MONTHS = COMM["months"]; CM_PHASE = COMM["phase"]; GLBL = COMM["grp_label"]
-GRP_ORDER = ["TOTAL", "TOP", "ENT_OTH", "SMB", "MM"]
-top_brands_list = COMM["top_brands_list"]
-def _col(scn, grp, key): return [x[key] for x in COMM[scn][grp]]
-_actual_idx = max(i for i, m in enumerate(CM_MONTHS) if CM_PHASE[m] == "Actual")
-cm_jul = COMM["opt"]["TOTAL"][_actual_idx]
-cm_jan = COMM["opt"]["TOTAL"][0]
-q4o = COMM["q4_opt"]; q4p = COMM["q4_pess"]
-cm_jul_pct = f'{cm_jul["comm_pct"]:.1f}%'; cm_jan_pct = f'{cm_jan["comm_pct"]:.1f}%'
-cm_jul_aov = f'{cm_jul["aov"]:.2f}'
+# ── Commission tab: actuals (dbx, auto) + forecast (Excel, static) ──────────────
+COMM_ACT = json.loads((HERE / "commission_actuals.json").read_text(encoding="utf-8"))
+COMM_FC = json.loads((HERE / "commission_forecast.json").read_text(encoding="utf-8"))
+GLBL = COMM_FC["grp_label"]; GRP_ORDER = ["TOTAL", "TOP", "ENT_OTH", "SMB", "MM"]
+top_brands_list = COMM_FC["top_brands_list"]
+ACT_MONTHS = COMM_ACT["months"]; _last_act = ACT_MONTHS[-1]; _fc_all = COMM_FC["months"]
+FC_MONTHS = _fc_all[_fc_all.index(_last_act) + 1:] if _last_act in _fc_all else []
+CM_MONTHS = ACT_MONTHS + FC_MONTHS
+_act = {g: {x["m"]: x for x in COMM_ACT["actual_series"][g]} for g in GRP_ORDER}
+_fc = {g: {x["m"]: x for x in COMM_FC["opt"][g]} for g in GRP_ORDER}
+def _cell_for(g, m, key):
+    src = _act[g].get(m) if m in ACT_MONTHS else _fc[g].get(m)
+    return None if not src else src.get(key)
+COMM_JS = {"months": CM_MONTHS, "grp_label": GLBL, "opt": {}}
+for g in GRP_ORDER:
+    COMM_JS["opt"][g] = [{"m": m, "comm_pct": _cell_for(g, m, "comm_pct"), "comm_aov": _cell_for(g, m, "comm_aov"),
+                          "comm": _cell_for(g, m, "comm"), "aov": _cell_for(g, m, "aov")} for m in CM_MONTHS]
+cm_last = _act["TOTAL"][_last_act]; cm_first = COMM_JS["opt"]["TOTAL"][0]
+q4o = COMM_FC["q4_opt"]; q4p = COMM_FC["q4_pess"]
+cm_jul_pct = f'{cm_last["comm_pct"]:.1f}%'; cm_jan_pct = f'{cm_first["comm_pct"]:.1f}%'
+cm_jul_aov = f'{cm_last["aov"]:.2f}'
 q4o_comm = eur(q4o["TOTAL"]["comm"]); q4o_pct = f'{q4o["TOTAL"]["comm_pct"]:.1f}%'
 q4o_aov = f'{q4o["TOTAL"]["aov"]:.2f}'; q4p_comm = eur(q4p["TOTAL"]["comm"])
 comm_month_headers = "".join(f"<th>{m}</th>" for m in CM_MONTHS)
 def _pct_cell(v): return "<td>-</td>" if v is None else f"<td>{v:.1f}%</td>"
-def _ratio_row(grp, key, tag, cls=""):
-    cells = "".join(_pct_cell(v) for v in _col("opt", grp, key))
-    return f'<tr class="{cls}"><td class="axis">{GLBL[grp]} · {tag}</td>{cells}</tr>'
+def _ratio_row(g, key, tag, cls=""):
+    cells = "".join(_pct_cell(x[key]) for x in COMM_JS["opt"][g])
+    return f'<tr class="{cls}"><td class="axis">{GLBL[g]} · {tag}</td>{cells}</tr>'
 comm_grp_rows = ""
 for _g in GRP_ORDER:
     comm_grp_rows += _ratio_row(_g, "comm_pct", "%GMV", "pos" if _g == "TOTAL" else "")
     comm_grp_rows += _ratio_row(_g, "comm_aov", "%AOV")
-_aov_cells = "".join(("<td>-</td>" if v is None else f"<td>€{v:.1f}</td>") for v in _col("opt", "TOTAL", "aov"))
-_eur_cells = "".join(f"<td>{eur(v)}</td>" for v in _col("opt", "TOTAL", "comm"))
+_aov_cells = "".join(("<td>-</td>" if x["aov"] is None else f"<td>€{x['aov']:.1f}</td>") for x in COMM_JS["opt"]["TOTAL"])
+_eur_cells = "".join(("<td>-</td>" if x["comm"] is None else f"<td>{eur(x['comm'])}</td>") for x in COMM_JS["opt"]["TOTAL"])
 comm_grp_rows += f'<tr><td class="axis">Total · AOV</td>{_aov_cells}</tr>'
 comm_grp_rows += f'<tr><td class="axis">Total · commission €</td>{_eur_cells}</tr>'
-def _q4_row(grp):
-    o = q4o[grp]; pp = q4p[grp]
+def _q4_row(g):
+    o = q4o[g]; pp = q4p[g]
     op = "-" if o["comm_pct"] is None else f'{o["comm_pct"]:.1f}%'
     pc = "-" if pp["comm_pct"] is None else f'{pp["comm_pct"]:.1f}%'
     oa = "-" if o["aov"] is None else f'€{o["aov"]:.1f}'
-    cls = "pos" if grp == "TOTAL" else ""
-    return (f'<tr class="{cls}"><td class="axis">{GLBL[grp]}</td>'
+    cls = "pos" if g == "TOTAL" else ""
+    return (f'<tr class="{cls}"><td class="axis">{GLBL[g]}</td>'
             f'<td>{eur(o["comm"])}</td><td>{op}</td><td>{oa}</td><td>{eur(o["gmv"])}</td>'
             f'<td>{eur(pp["comm"])}</td><td>{pc}</td></tr>')
 q4_rows = "".join(_q4_row(g) for g in GRP_ORDER)
@@ -334,12 +293,12 @@ def _tbq_row(d):
     return (f'<tr class="{cls}"><td class="axis">{d["brand"]}</td><td>{jc}</td><td>{jp}</td>'
             f'<td>{eur(d["q4_comm"])}</td><td>{qp}</td><td>{d["q4_locs"]}</td>'
             f'<td style="text-align:left">{status}</td></tr>')
-comm_tbq_rows = "".join(_tbq_row(d) for d in COMM["top_brand_q4"])
+comm_tbq_rows = "".join(_tbq_row(d) for d in COMM_FC["top_brand_q4"])
 def _p_row(rec):
-    a = "-" if rec["aov"] is None else f'€{rec["aov"]:.1f}'
+    a = "-" if rec.get("aov") is None else f'€{rec["aov"]:.1f}'
     return (f'<tr><td class="axis">{rec["brand"]}</td><td>{rec["seg"]}</td>'
             f'<td>{eur(rec["comm"])}</td><td>{rec["comm_pct"]:.1f}%</td><td>{a}</td></tr>')
-comm_oth_rows = "".join(_p_row(r) for r in COMM["partners_ent_oth"])
+comm_oth_rows = "".join(_p_row(r) for r in COMM_ACT["partners_ent_oth"])
 
 # ── Chart data ──────────────────────────────────────────────────────────────────
 months = DATA["meta"]["months"]
@@ -503,11 +462,11 @@ HTML = f"""<!DOCTYPE html>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Main city</th><th>Cities</th><th>GMV</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Eater fee/ord</th><th>CPO</th><th>Camp ord%</th></tr></thead><tbody>{brand_rows}</tbody></table></div>
 
   <h2 class="section" id="diagnosis"><span class="bar"></span>Чому збиткові &amp; що робити — VARUS, KOPIYKA, SANTIM, LOKO</h2>
-  <p class="section-desc">P&amp;L на замовлення (серпень 2026). CP/зам. = Contribution Profit на одне доставлене замовлення. Own% — частка власної доставки партнера (при 100% Bolt не несе курʼєрських витрат). «Inc» = demand + supply incentives; «Camp» = campaign spend Bolt.</p>
+  <p class="section-desc">P&amp;L на замовлення ({DIAG_MONTH_UA} 2026). CP/зам. = Contribution Profit на одне доставлене замовлення. Own% — частка власної доставки партнера (при 100% Bolt не несе курʼєрських витрат). «Inc» = demand + supply incentives; «Camp» = campaign spend Bolt.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>AOV</th><th>Own%</th><th>Comm %GMV</th><th>Comm/ord</th><th>Eater fee/ord</th><th>CPO</th><th>Inc/ord</th><th>Refund/ord</th><th>Camp/ord</th><th>Camp ord%</th><th>CP/ord</th><th>CP margin</th></tr></thead><tbody>{diag_rows}</tbody></table></div>
-  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть (серпень 2026)</h3><p>Більшість фокус-партнерів у серпні наблизились до беззбитковості (SANTIM відновився після липневого сплеску refunds, TAISTRA вже <b>+0.6%</b>, KOPIYKA MINI ~0%). Головний спільний тягар тепер — <b>надважке промо</b> (VARUS/KOPIYKA/SANTIM/KOPIYKA MINI: 80–84% замовлень з кампанією) + <b>CPO €1.8–2.4</b>. <b>LOKO</b> (own-delivery, CPO=0) стримується низькою комісією 3.2%.</p></div>
+  <div class="callout" style="border-left-color:var(--warn)"><h3>Суть ({DIAG_MONTH_UA} 2026)</h3><p>{diag_summary}</p></div>
 
-  <h3 style="margin:22px 0 4px">Де найбільший мінус CP (по містах, серпень 2026)</h3>
+  <h3 style="margin:22px 0 4px">Де найбільший мінус CP (по містах, {DIAG_MONTH_UA} 2026)</h3>
   <p class="section-desc">Місто з найбільшим тягарем CP для кожного партнера — куди бити першими.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Місто #1 за втратами</th><th>Orders</th><th>CP</th><th>Margin</th><th>CPO</th><th>Camp ord%</th><th>Refund/ord</th><th>Коментар</th></tr></thead><tbody>{cityworst_rows}</tbody></table></div>
 
@@ -520,7 +479,7 @@ HTML = f"""<!DOCTYPE html>
       <div id="simTotal" style="font-size:14px;color:var(--soft)"></div>
     </div>
     <table class="matrix"><thead><tr><th>Partner</th><th>GMV</th><th>Комісія зараз</th><th>CP зараз</th><th>Margin зараз</th><th>→ CP новий</th><th>→ Margin новий</th><th>Статус</th></tr></thead><tbody id="simBody"></tbody></table>
-    <p class="cap" style="margin-top:8px">Спрощена модель (ceteris paribus): не враховує вплив на обсяг замовлень від зміни знижок/комісії. Bolt промо = campaign spend Bolt + demand incentives (серпень 2026).</p>
+    <p class="cap" style="margin-top:8px">Спрощена модель (ceteris paribus): не враховує вплив на обсяг замовлень від зміни знижок/комісії. Bolt промо = campaign spend Bolt + demand incentives ({DIAG_MONTH_UA} 2026).</p>
   </div>
 
   <h2 class="section" id="movers"><span class="bar"></span>Movers — хто зростає, хто падає</h2>
@@ -585,7 +544,7 @@ document.getElementById('promoSlider').addEventListener('input',renderSim);
 renderSim();
 
 // ── Commission tab ──
-const COMM={json.dumps(COMM, ensure_ascii=False)};
+const COMM={json.dumps(COMM_JS, ensure_ascii=False)};
 const cml=COMM.months;
 const grpColor={{TOTAL:'#13203a',TOP:'#2563eb',ENT_OTH:'#0e7faa',SMB:'#15a34a',MM:'#d1a53f'}};
 const glbl=COMM.grp_label;

@@ -26,3 +26,6 @@
 python3 generate_report.py
 ```
 `index.html` — самодостатній (дані вбудовані, графіки через Chart.js CDN).
+
+## Автооновлення
+Звіт оновлюється автоматично **щопонеділка о 10:00 за Києвом** (GitHub Actions, `0 7 * * 1` UTC) — `refresh_data.py` тягне свіжі дані з Databricks (`main.ng_delivery`), `generate_report.py` перебудовує `index.html`. Прогноз Q4 (`commission_forecast.json`) статичний — оновлюється вручну, коли надано новий файл FC Stores Forecast.
