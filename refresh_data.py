@@ -16,6 +16,7 @@ Connection via env vars (set as GitHub secrets in CI, or exported locally):
   DATABRICKS_TOKEN      personal access token
 """
 import os
+import sys
 import json
 import warnings
 from datetime import date
@@ -23,7 +24,11 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 import pandas as pd  # noqa: E402
-from databricks import sql  # noqa: E402
+
+_DBX_ROOT = Path.home() / "databricks-setup"
+if str(_DBX_ROOT) not in sys.path:
+    sys.path.insert(0, str(_DBX_ROOT))
+from dbx import DBX  # noqa: E402
 
 HERE = Path(__file__).parent
 # main.ng_delivery lives on incentives; ignore unrelated DATABRICKS_HOST from the shell (e.g. bolt-common).
@@ -60,9 +65,17 @@ TOP_BRAND_SQL = (
     "OR UPPER(d.brand_name) LIKE '%RUKAV%' OR UPPER(d.brand_name) LIKE 'ATB%' "
     "OR UPPER(d.brand_name) LIKE '%АТБ%' OR UPPER(d.brand_name) LIKE '%FORA%' "
     "OR UPPER(d.brand_name) LIKE '%ФОРА%' OR UPPER(d.brand_name) LIKE '%AUCHAN%' "
-    "OR UPPER(d.brand_name) LIKE '%АШАН%' OR d.brand_name LIKE '%Біле%' "
-    "OR UPPER(d.brand_name) LIKE '%BILE%' OR UPPER(d.brand_name) LIKE '%SUKHE%'"
+    "OR UPPER(d.brand_name) LIKE '%АШАН%'"
 )
+HOP_HEY_CHURN_FROM = date(2026, 11, 1)
+
+
+def scope_sql():
+    """Drop HOP HEY from months on/after churn (1 Nov 2026)."""
+    return (
+        f"AND NOT (UPPER(d.brand_name) LIKE '%HOP%HEY%' "
+        f"AND f.metric_timestamp_partition >= DATE'{HOP_HEY_CHURN_FROM.isoformat()}')"
+    )
 SEG_CASE = (
     "CASE WHEN d.business_segment_v2='Enterprise (AM Segment)' THEN 'Enterprise' "
     "WHEN d.business_segment_v2='Mid-market (AM Segment)' THEN 'Mid-market' "
@@ -72,11 +85,8 @@ VERT = "d.delivery_vertical IN ('store_3p_ent','store_3p_mm_smb')"
 
 
 def q(sql_text):
-    with sql.connect(server_hostname=HOST, http_path=HTTP_PATH, access_token=TOKEN) as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql_text)
-            cols = [c[0] for c in cur.description]
-            return pd.DataFrame(cur.fetchall(), columns=cols)
+    with DBX(http_path=HTTP_PATH) as dbx:
+        return dbx.query(sql_text)
 
 
 def rnum(df, skip=("month", "city_name", "brand_name", "segment", "grp")):
@@ -139,7 +149,7 @@ def build_main(months, cur, prev):
         f.late_delivery_order_rate_value late_v, f.late_delivery_order_rate_weight late_w,
         f.gmv_before_discounts_per_order_eur_value aov_v, f.gmv_before_discounts_per_order_eur_weight aov_w
       FROM {FACT} f JOIN {DIM} d ON f.provider_id=d.provider_id
-      WHERE {VERT} AND d.country_code='ua' AND f.metric_timestamp_partition IN ({inmonths}))
+      WHERE {VERT} AND d.country_code='ua' AND f.metric_timestamp_partition IN ({inmonths}) {scope_sql()})
     SELECT month, city_name, brand_name, segment,
       SUM(gmv) gmv, SUM(cp) cp, SUM(gp) gp, SUM(commission) commission,
       SUM(demand_inc) demand_inc, SUM(supply_inc) supply_inc, SUM(refunds) refunds,
@@ -392,7 +402,7 @@ def build_commission_actuals(months):
         SUM(f.total_invoiced_provider_commission_eur) comm,
         SUM(f.delivered_orders_count) orders
       FROM {FACT} f JOIN {DIM} d ON f.provider_id=d.provider_id
-      WHERE d.country_code='ua' AND {VERT} AND f.metric_timestamp_partition IN ({inmonths})
+      WHERE d.country_code='ua' AND {VERT} AND f.metric_timestamp_partition IN ({inmonths}) {scope_sql()}
       GROUP BY 1,2"""
     df = rnum(q(sqlg))
     df["month"] = df["month"].astype(str)
@@ -420,7 +430,7 @@ def build_commission_actuals(months):
         SUM(f.total_invoiced_provider_commission_eur) comm, SUM(f.total_gmv_before_discounts_eur) gmv,
         SUM(f.total_provider_price_before_discounts_eur) mprice, SUM(f.delivered_orders_count) orders
       FROM {FACT} f JOIN {DIM} d ON f.provider_id=d.provider_id
-      WHERE d.country_code='ua' AND {VERT} AND f.metric_timestamp_partition=DATE'{latest.isoformat()}'
+      WHERE d.country_code='ua' AND {VERT} AND f.metric_timestamp_partition=DATE'{latest.isoformat()}' {scope_sql()}
       GROUP BY 1,2,3"""), skip=("brand_name", "segment", "grp"))
     ent = pdf[pdf.grp == "ENT_OTH"].sort_values("comm", ascending=False).head(15)
     partners_ent_oth = [{"brand": r.brand_name, "seg": r.segment, "comm": round(r.comm),
@@ -429,6 +439,111 @@ def build_commission_actuals(months):
                          "aov": round(r.gmv / r.orders, 2) if r.orders else None} for r in ent.itertuples()]
     return {"months": labels, "actual_series": series, "partners_ent_oth": partners_ent_oth,
             "latest_label": labels[-1]}
+
+
+def hop_hey_monthly_profile(ref_month):
+    """Last full month before churn — used to strip HOP HEY from Nov+ forecast."""
+    df = rnum(q(f"""SELECT
+        SUM(f.total_gmv_before_discounts_eur) gmv,
+        SUM(f.total_invoiced_provider_commission_eur) comm,
+        SUM(f.delivered_orders_count) orders,
+        SUM(f.total_provider_price_before_discounts_eur) mprice
+      FROM {FACT} f JOIN {DIM} d ON f.provider_id=d.provider_id
+      WHERE d.country_code='ua' AND {VERT}
+        AND UPPER(d.brand_name) LIKE '%HOP%HEY%'
+        AND f.metric_timestamp_partition=DATE'{ref_month.isoformat()}'"""))
+    if df.empty or not df.iloc[0]["gmv"]:
+        return None
+    r = df.iloc[0]
+    return {"comm": round(r.comm), "gmv": round(r.gmv), "orders": int(r.orders), "mprice": round(r.mprice)}
+
+
+def _recalc_fc_row(r):
+    gmv, comm, o, mp = r.get("gmv"), r.get("comm"), r.get("orders"), r.get("mprice")
+    r["comm_pct"] = round(comm / gmv * 100, 1) if gmv else None
+    r["aov"] = round(gmv / o, 2) if o else None
+    if mp:
+        r["comm_aov"] = round(comm / mp * 100, 1)
+    elif gmv and comm:
+        r["comm_aov"] = round(comm / gmv * 100, 1)
+
+
+def _fc_shift_month(series, month, g_from, g_to, delta):
+    rf = next(x for x in series[g_from] if x["m"] == month)
+    rt = next(x for x in series[g_to] if x["m"] == month)
+    for k in ("comm", "gmv", "orders"):
+        d = delta.get(k, 0)
+        rf[k] = max(0, round(rf[k] - d))
+        rt[k] = round(rt.get(k, 0) + d)
+    _recalc_fc_row(rf)
+    _recalc_fc_row(rt)
+
+
+def _fc_subtract(series, group, month, delta):
+    r = next(x for x in series[group] if x["m"] == month)
+    for k in ("comm", "gmv", "orders"):
+        if k in delta:
+            r[k] = max(0, round(r[k] - delta[k]))
+    _recalc_fc_row(r)
+
+
+def _recompute_q4(fc, variant):
+    q4m = ("Oct", "Nov", "Dec")
+    q4_key = "q4_opt" if variant == "opt" else "q4_pess"
+    for g in fc["groups"]:
+        acc = {"comm": 0, "gmv": 0, "orders": 0, "mprice": 0}
+        for m in q4m:
+            row = next(x for x in fc[variant][g] if x["m"] == m)
+            acc["comm"] += row.get("comm") or 0
+            acc["gmv"] += row.get("gmv") or 0
+            acc["orders"] += row.get("orders") or 0
+        out = {"comm": round(acc["comm"]), "gmv": round(acc["gmv"]), "orders": int(acc["orders"])}
+        out["comm_pct"] = round(out["comm"] / out["gmv"] * 100, 1) if out["gmv"] else None
+        out["aov"] = round(out["gmv"] / out["orders"], 2) if out["orders"] else None
+        out["comm_aov"] = out["comm_pct"]
+        fc[q4_key][g] = out
+
+
+def patch_commission_forecast(hop_profile):
+    """Align static FC Excel with report rules (Bile → ENT other; HOP HEY out from Nov)."""
+    path = HERE / "commission_forecast.json"
+    fc = json.loads(path.read_text(encoding="utf-8"))
+    meta = fc.setdefault("patch_meta", {})
+
+    tbq = fc.get("top_brand_q4", [])
+    bile = next((x for x in tbq if x.get("brand") == "BILE TA SUKHE"), None)
+    if bile and not meta.get("bile_ent_other"):
+        fc["top_brand_q4"] = [x for x in tbq if x.get("brand") != "BILE TA SUKHE"]
+        lst = fc.get("top_brands_list", "")
+        for sep in (", Біле та Сухе", "Біле та Сухе, ", "Біле та Сухе"):
+            lst = lst.replace(sep, "")
+        fc["top_brands_list"] = lst.strip(", ")
+        per = {
+            "comm": round(bile["q4_comm"] / 3),
+            "gmv": round(bile["q4_gmv"] / 3),
+            "orders": round(bile["q4_orders"] / 3),
+        }
+        for variant in ("opt", "pess"):
+            for m in ("Oct", "Nov", "Dec"):
+                _fc_shift_month(fc[variant], m, "TOP", "ENT_OTH", per)
+        meta["bile_ent_other"] = True
+
+    hop_months = {"Nov", "Dec", "Janʼ27", "Febʼ27", "Marʼ27"}
+    if hop_profile and meta.get("hop_hey_excl") != HOP_HEY_CHURN_FROM.isoformat():
+        hop = {k: hop_profile[k] for k in ("comm", "gmv", "orders")}
+        for variant in ("opt", "pess"):
+            for m in hop_months:
+                for g in ("ENT_OTH", "TOTAL"):
+                    _fc_subtract(fc[variant], g, m, hop)
+        meta["hop_hey_excl"] = HOP_HEY_CHURN_FROM.isoformat()
+
+    fc["partners_ent_oth"] = [
+        p for p in fc.get("partners_ent_oth", [])
+        if not ("HOP" in p.get("brand", "").upper() and "HEY" in p.get("brand", "").upper())
+    ]
+    _recompute_q4(fc, "opt")
+    _recompute_q4(fc, "pess")
+    path.write_text(json.dumps(fc, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
 def main():
@@ -446,6 +561,9 @@ def main():
     comm = build_commission_actuals(months)
     (HERE / "commission_actuals.json").write_text(json.dumps(comm, ensure_ascii=False), encoding="utf-8")
     print(f"commission_actuals.json: {len(comm['months'])} months")
+    hop_prof = hop_hey_monthly_profile(date(2026, 9, 1))
+    patch_commission_forecast(hop_prof)
+    print("commission_forecast.json: patched (Bile → ENT other; HOP HEY excluded from Nov+ forecast)")
     print("Refresh complete.")
 
 

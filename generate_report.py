@@ -440,7 +440,7 @@ HTML = f"""<!DOCTYPE html>
 
   <h3 style="margin:24px 0 4px">TOP Brands — факт ({_last_act}) → прогноз Q4ʼ26</h3>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Brand</th><th>Comm {_last_act}</th><th>%GMV {_last_act}</th><th>Comm Q4ʼ26</th><th>%GMV Q4</th><th>Locations Q4</th><th>Статус</th></tr></thead><tbody>{comm_tbq_rows}</tbody></table></div>
-  <div class="callout" style="border-left-color:var(--accent)"><h3>TOP Brands у Q4 — драйвери</h3><p>Головний приріст комісії дають <b>ATB</b> (650 локацій, ~€24k, 4%), <b>Fora</b> (250, ~€22k, 6%) та <b>Rukavichka</b> (76, ~€13k, 6.8% — з майже нуля). <b>VARUS</b> лишається №1 (~€38k), але ставка низька 5.5%. Нові логотипи: <b>Auchan</b> (~€7k, 9%) і <b>Біле та Сухе</b> (~€5k, 15%). Разом TOP Brands у Q4 ≈ €117k комісії при ставці ~5.3%.</p></div>
+  <div class="callout" style="border-left-color:var(--accent)"><h3>TOP Brands у Q4 — драйвери</h3><p>Головний приріст комісії дають <b>ATB</b> (650 локацій, ~€24k, 4%), <b>Fora</b> (250, ~€22k, 6%) та <b>Rukavichka</b> (76, ~€13k, 6.8% — з майже нуля). <b>VARUS</b> лишається №1 (~€38k), але ставка низька 5.5%. Новий логотип: <b>Auchan</b> (~€7k, 9%). <b>Біле та Сухе</b> — у групі ENT other. <b>HOP HEY</b> не в прогнозі з 01.11.2026 (churn). Разом TOP Brands у Q4 ≈ €112k комісії (Opt).</p></div>
 
   <h3 style="margin:24px 0 4px">ENT other — партнери за комісією ({_last_act}, факт)</h3>
   <p class="section-desc">Напійний/спеціалізований Enterprise-рітейл (без TOP Brands) — високий %GMV. Топ-15.</p>
