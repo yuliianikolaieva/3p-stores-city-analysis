@@ -31,7 +31,7 @@ jobs:
 
       - name: Refresh data from Databricks
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          NG_DELIVERY_DATABRICKS_HOST: bolt-incentives.cloud.databricks.com
           DATABRICKS_HTTP_PATH: ${{ secrets.DATABRICKS_HTTP_PATH }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: python3 refresh_data.py

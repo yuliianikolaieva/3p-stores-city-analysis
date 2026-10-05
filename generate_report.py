@@ -10,7 +10,8 @@ from pathlib import Path
 
 HERE = Path(__file__).parent
 DATA = json.loads((HERE / "threep_data.json").read_text(encoding="utf-8"))
-MLABEL = {"jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun", "jul": "Jul", "aug": "Aug"}
+MLABEL = {"jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "may": "May", "jun": "Jun",
+          "jul": "Jul", "aug": "Aug", "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"}
 SEGS = ["Enterprise", "Mid-market", "SMB"]
 CUR = DATA["meta"].get("cur", "jun")
 PREV = DATA["meta"].get("prev", "may")
@@ -257,8 +258,9 @@ for g in GRP_ORDER:
                           "comm": _cell_for(g, m, "comm"), "aov": _cell_for(g, m, "aov")} for m in CM_MONTHS]
 cm_last = _act["TOTAL"][_last_act]; cm_first = COMM_JS["opt"]["TOTAL"][0]
 q4o = COMM_FC["q4_opt"]; q4p = COMM_FC["q4_pess"]
-cm_jul_pct = f'{cm_last["comm_pct"]:.1f}%'; cm_jan_pct = f'{cm_first["comm_pct"]:.1f}%'
-cm_jul_aov = f'{cm_last["aov"]:.2f}'
+cm_last_pct = f'{cm_last["comm_pct"]:.1f}%'; cm_jan_pct = f'{cm_first["comm_pct"]:.1f}%'
+cm_last_aov = f'{cm_last["aov"]:.2f}'
+comm_act_period = f"Jan–{_last_act}" if _last_act != "Jan" else "Jan"
 q4o_comm = eur(q4o["TOTAL"]["comm"]); q4o_pct = f'{q4o["TOTAL"]["comm_pct"]:.1f}%'
 q4o_aov = f'{q4o["TOTAL"]["aov"]:.2f}'; q4p_comm = eur(q4p["TOTAL"]["comm"])
 comm_month_headers = "".join(f"<th>{m}</th>" for m in CM_MONTHS)
@@ -401,7 +403,7 @@ HTML = f"""<!DOCTYPE html>
   <section id="overview">
     <div class="callout">
       <h3>Головний висновок: обсяг і маржа рознесені по сегментах</h3>
-      <p>Enterprise робить <b>~88% GMV</b> і вже вийшов у ~нуль по CP (+0.6%). SMB — ~12% GMV, найприбутковіший сегмент (CP margin ~13%). Mid-market у 2026 реклесифіковано в ENT/SMB (≈0). Загальний CP уперше стабільно додатний (+€13.5k у серпні при GMV €649k). Багато «3P Stores» — це фактично крафт-пиво/напої (LOKO, HOP HEY, BEER MARKET, REMESLO BREWERY), а не продуктовий рітейл.</p>
+      <p>Enterprise робить <b>~88% GMV</b> і вже вийшов у ~нуль по CP (+0.6%). SMB — ~12% GMV, найприбутковіший сегмент (CP margin ~13%). Mid-market у 2026 реклесифіковано в ENT/SMB (≈0). Загальний CP у {UAMON.get(CURLBL, CURLBL)}: <b>{eur(jun['cp'])}</b> при GMV <b>{eur(jun['gmv'])}</b> (CP margin {cp_margin:.1f}%). Багато «3P Stores» — це фактично крафт-пиво/напої (LOKO, HOP HEY, BEER MARKET, REMESLO BREWERY), а не продуктовий рітейл.</p>
     </div>
   </section>
 
@@ -414,10 +416,10 @@ HTML = f"""<!DOCTYPE html>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Segment</th><th>GMV ({CURLBL})</th><th>Share</th><th>MoM</th><th>CP</th><th>CP margin</th><th>Orders</th><th>Eater fee/ord</th><th>EF %GMV</th><th>CPO</th><th>Camp Bolt %GMV</th><th>Camp ord%</th><th>Partners</th></tr></thead><tbody>{seg_rows}</tbody></table></div>
 
   <h2 class="section" id="commission"><span class="bar"></span>Commission — рівень, тренд, партнери та прогноз Q4</h2>
-  <p class="section-desc">Джерело: <b>FC Stores Forecast (Oct26–Mar27)</b> — actual Jan–Jul (dbx), projection Aug–Sep, forecast Oct26–Marʼ27 (Optimistic). Групи: <b>TOP Brands</b> ({top_brands_list}), <b>ENT other</b> (решта Enterprise), <b>SMB</b>, <b>MM</b>.</p>
+  <p class="section-desc">Джерело: <b>FC Stores Forecast (Oct26–Mar27)</b> — actual {comm_act_period} (dbx), forecast Oct26–Marʼ27 (Optimistic). Групи: <b>TOP Brands</b> ({top_brands_list}), <b>ENT other</b> (решта Enterprise), <b>SMB</b>, <b>MM</b>.</p>
   <div class="grid kpis">
-    <div class="kpi"><div class="n">{cm_jul_pct}</div><div class="l">Commission %GMV (Jul, факт) · Jan {cm_jan_pct}</div></div>
-    <div class="kpi"><div class="n">€{cm_jul_aov}</div><div class="l">AOV (Jul, факт)</div></div>
+    <div class="kpi"><div class="n">{cm_last_pct}</div><div class="l">Commission %GMV ({_last_act}, факт) · Jan {cm_jan_pct}</div></div>
+    <div class="kpi"><div class="n">€{cm_last_aov}</div><div class="l">AOV ({_last_act}, факт)</div></div>
     <div class="kpi base"><div class="n">{q4o_comm}</div><div class="l">Q4ʼ26 commission (Opt)</div></div>
     <div class="kpi"><div class="n">{q4o_pct}</div><div class="l">Q4ʼ26 commission %GMV</div></div>
     <div class="kpi"><div class="n">€{q4o_aov}</div><div class="l">Q4ʼ26 AOV (Opt)</div></div>
@@ -431,16 +433,16 @@ HTML = f"""<!DOCTYPE html>
   <div class="chartcard"><h3>AOV — по групах (€)</h3><p class="cap">Total / TOP Brands / ENT other</p><canvas id="commAov" height="150"></canvas></div>
   <h3 style="margin:22px 0 4px">Commission %GMV, AOV, € — помісячно (Jan26–Marʼ27, Optimistic)</h3>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Метрика</th>{comm_month_headers}</tr></thead><tbody>{comm_grp_rows}</tbody></table></div>
-  <p class="cap">Actual: Jan–Jul · Projection: Aug–Sep · Forecast: Oct26–Marʼ27.</p>
+  <p class="cap">Actual: {comm_act_period} (dbx) · Forecast: Oct26–Marʼ27.</p>
 
   <h3 style="margin:24px 0 4px">Прогноз Q4ʼ26 (Oct–Dec) по групах — Optimistic vs Pessimistic</h3>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Група</th><th>Comm € (Opt)</th><th>%GMV</th><th>AOV</th><th>GMV (Opt)</th><th>Comm € (Pess)</th><th>%GMV (Pess)</th></tr></thead><tbody>{q4_rows}</tbody></table></div>
 
-  <h3 style="margin:24px 0 4px">TOP Brands — факт (Jul) → прогноз Q4ʼ26</h3>
-  <div class="tablewrap"><table class="matrix"><thead><tr><th>Brand</th><th>Comm Jul</th><th>%GMV Jul</th><th>Comm Q4ʼ26</th><th>%GMV Q4</th><th>Locations Q4</th><th>Статус</th></tr></thead><tbody>{comm_tbq_rows}</tbody></table></div>
+  <h3 style="margin:24px 0 4px">TOP Brands — факт ({_last_act}) → прогноз Q4ʼ26</h3>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>Brand</th><th>Comm {_last_act}</th><th>%GMV {_last_act}</th><th>Comm Q4ʼ26</th><th>%GMV Q4</th><th>Locations Q4</th><th>Статус</th></tr></thead><tbody>{comm_tbq_rows}</tbody></table></div>
   <div class="callout" style="border-left-color:var(--accent)"><h3>TOP Brands у Q4 — драйвери</h3><p>Головний приріст комісії дають <b>ATB</b> (650 локацій, ~€24k, 4%), <b>Fora</b> (250, ~€22k, 6%) та <b>Rukavichka</b> (76, ~€13k, 6.8% — з майже нуля). <b>VARUS</b> лишається №1 (~€38k), але ставка низька 5.5%. Нові логотипи: <b>Auchan</b> (~€7k, 9%) і <b>Біле та Сухе</b> (~€5k, 15%). Разом TOP Brands у Q4 ≈ €117k комісії при ставці ~5.3%.</p></div>
 
-  <h3 style="margin:24px 0 4px">ENT other — партнери за комісією (Jul, факт)</h3>
+  <h3 style="margin:24px 0 4px">ENT other — партнери за комісією ({_last_act}, факт)</h3>
   <p class="section-desc">Напійний/спеціалізований Enterprise-рітейл (без TOP Brands) — високий %GMV. Топ-15.</p>
   <div class="tablewrap"><table class="matrix"><thead><tr><th>Partner</th><th>Segment</th><th>Commission</th><th>%GMV</th><th>AOV</th></tr></thead><tbody>{comm_oth_rows}</tbody></table></div>
 
@@ -490,7 +492,7 @@ HTML = f"""<!DOCTYPE html>
   </div>
 
   <footer>
-    <p>CP = Contribution Profit (invoiced). Сегмент = business_segment_v2 (dim_provider_v2). MoM = серпень vs липень 2026. Ставки failed/late зважені за замовленнями. Період даних: {PERIOD}. Міста з нульовим GMV у поточному місяці виключені.</p>
+    <p>CP = Contribution Profit (invoiced). Сегмент = business_segment_v2 (dim_provider_v2). MoM = {CURLBL} vs {PREVLBL} 2026. Ставки failed/late зважені за замовленнями. Період даних: {PERIOD}. Міста з нульовим GMV у поточному місяці виключені.</p>
     <p>Джерело даних: Databricks <code>ng_delivery_spark.fact_provider_monthly</code> + <code>dim_provider_v2</code>, вертикаль <code>store_3p_ent</code> + <code>store_3p_mm_smb</code>, country_code = 'ua'. Згенеровано з <code>threep_data.json</code>.</p>
   </footer>
 </div>

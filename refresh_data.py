@@ -26,9 +26,25 @@ import pandas as pd  # noqa: E402
 from databricks import sql  # noqa: E402
 
 HERE = Path(__file__).parent
-HOST = os.environ.get("DATABRICKS_HOST", "bolt-incentives.cloud.databricks.com")
-HTTP_PATH = os.environ["DATABRICKS_HTTP_PATH"]
-TOKEN = os.environ["DATABRICKS_TOKEN"]
+# main.ng_delivery lives on incentives; ignore unrelated DATABRICKS_HOST from the shell (e.g. bolt-common).
+HOST = os.environ.get("NG_DELIVERY_DATABRICKS_HOST", "bolt-incentives.cloud.databricks.com")
+_DEFAULT_HTTP = "sql/protocolv1/o/2472566184436351/0505-112942-d3yviznw"
+
+
+def _load_token():
+    tok = os.environ.get("DATABRICKS_TOKEN")
+    if tok:
+        return tok
+    env_path = Path.home() / "databricks-setup" / ".env"
+    if env_path.is_file():
+        for line in env_path.read_text().splitlines():
+            if line.startswith("DATABRICKS_TOKEN="):
+                return line.split("=", 1)[1].strip()
+    raise RuntimeError("Set DATABRICKS_TOKEN or add it to ~/databricks-setup/.env")
+
+
+HTTP_PATH = os.environ.get("DATABRICKS_HTTP_PATH", _DEFAULT_HTTP)
+TOKEN = _load_token()
 SCHEMA = os.environ.get("DBX_SCHEMA", "main.ng_delivery")
 FACT = f"{SCHEMA}.fact_provider_monthly"
 DIM = f"{SCHEMA}.dim_provider_v2"
@@ -82,6 +98,14 @@ def month_list(latest_dt, n=8):
             y -= 1
     seq.reverse()
     return seq
+
+
+def months_ytd_2026(latest_dt):
+    """All complete months from Jan 2026 through latest_dt (report YTD window)."""
+    if latest_dt.year < 2026:
+        return month_list(latest_dt, 8)
+    end_m = latest_dt.month if latest_dt.year == 2026 else 12
+    return [date(2026, m, 1) for m in range(1, end_m + 1)]
 
 
 def latest_complete_month():
@@ -409,7 +433,7 @@ def build_commission_actuals(months):
 
 def main():
     latest = latest_complete_month()
-    months = month_list(latest, 8)
+    months = months_ytd_2026(latest)
     prev = months[-2]
     print(f"Latest complete month: {latest} | window: {months[0]}..{latest}")
     main_out = build_main(months, latest, prev)
